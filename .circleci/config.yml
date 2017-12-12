@@ -1,0 +1,77 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.9
+    working_directory: /go/src/github.com/alphasoc/flightsim
+    steps:
+      - checkout
+      - run: go install -v ./...
+      - run: go test -race -v ./...
+      - run:
+          name: build
+          command: |
+            GOARCH=amd64 GOOS=windows go build -o flightsim-windows-amd64 -ldflags "-X github.com/alphasoc/flightsim/version.Version=$(git describe)"
+            GOARCH=amd64 GOOS=linux   go build -o flightsim-linux-amd64   -ldflags "-X github.com/alphasoc/flightsim/version.Version=$(git describe)"
+            GOARCH=amd64 GOOS=darwin  go build -o flightsim-darwin-amd64  -ldflags "-X github.com/alphasoc/flightsim/version.Version=$(git describe)"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - flightsim
+  lint:
+    docker:
+      - image: circleci/golang:1.9
+    working_directory: /go/src/github.com/alphasoc/flightsim
+    steps:
+      - checkout
+      - restore_cache:
+          key: gometalinter-tools-{{ checksum "/go/bin/gometalinter" }}
+      - run: go get github.com/alecthomas/gometalinter
+      - run: gometalinter --install
+      - save_cache:
+          key: gometalinter-tools-{{ checksum "/go/bin/gometalinter" }}
+          paths:
+            - /go/bin/
+      - run: go install ./...
+      - run:
+          name: run linters
+          command:  |
+            gometalinter        \
+            --vendor            \
+            --disable-all       \
+            --enable=gofmt      \
+            --enable=golint     \
+            --enable=goimports  \
+            --enable=vetshadow  \
+            --enable=misspell   \
+            --enable=vet ./...
+
+  publish:
+    docker:
+      - image: circleci/golang:1.9
+    working_directory: /go/src/github.com/alphasoc/flightsim
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: publish
+          command: |
+            go get github.com/aktau/github-release
+            github-release release --user alphasoc --repo flightsim --tag $CIRCLE_TAG
+            github-release upload  --user alphasoc --repo flightsim --tag $CIRCLE_TAG --name flightsim --file flightsim
+
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - build
+      - lint
+      - publish:
+          requires:
+            - build
+            - lint
+          filters:
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/
+            branches:
+              ignore: /.*/
