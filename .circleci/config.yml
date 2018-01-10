@@ -11,13 +11,15 @@ jobs:
       - run:
           name: build
           command: |
-            GOARCH=amd64 GOOS=windows go build -o flightsim-windows-amd64 -ldflags "-X github.com/alphasoc/flightsim/version.Version=$(git describe)"
-            GOARCH=amd64 GOOS=linux   go build -o flightsim-linux-amd64   -ldflags "-X github.com/alphasoc/flightsim/version.Version=$(git describe)"
-            GOARCH=amd64 GOOS=darwin  go build -o flightsim-darwin-amd64  -ldflags "-X github.com/alphasoc/flightsim/version.Version=$(git describe)"
+            GOARCH=amd64 GOOS=windows go build -o flightsim-windows-amd64.exe -ldflags "-X github.com/alphasoc/flightsim/version.Version=$(git describe)"
+            GOARCH=amd64 GOOS=linux   go build -o flightsim-linux-amd64       -ldflags "-X github.com/alphasoc/flightsim/version.Version=$(git describe)"
+            GOARCH=amd64 GOOS=darwin  go build -o flightsim-darwin-amd64      -ldflags "-X github.com/alphasoc/flightsim/version.Version=$(git describe)"
       - persist_to_workspace:
           root: .
           paths:
-            - flightsim
+            - flightsim-windows-amd64.exe
+            - flightsim-linux-amd64
+            - flightsim-darwin-amd64
   lint:
     docker:
       - image: circleci/golang:1.9
@@ -58,7 +60,9 @@ jobs:
           command: |
             go get github.com/aktau/github-release
             github-release release --user alphasoc --repo flightsim --tag $CIRCLE_TAG
-            github-release upload  --user alphasoc --repo flightsim --tag $CIRCLE_TAG --name flightsim --file flightsim
+            github-release upload  --user alphasoc --repo flightsim --tag $CIRCLE_TAG --name flightsim-windows-amd64.exe --file flightsim-windows-amd64.exe
+            github-release upload  --user alphasoc --repo flightsim --tag $CIRCLE_TAG --name flightsim-linux-amd64 --file flightsim-linux-amd64
+            github-release upload  --user alphasoc --repo flightsim --tag $CIRCLE_TAG --name flightsim-darwin-amd64 --file flightsim-darwin-amd64
 
 workflows:
   version: 2
