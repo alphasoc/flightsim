@@ -20,10 +20,7 @@ func NewTunnel() *Tunnel {
 // Simulate lookups for txt records for give host.
 func (*Tunnel) Simulate(extIP net.IP, host string) error {
 	d := &net.Dialer{
-		LocalAddr: &net.UDPAddr{
-			IP:   extIP,
-			Port: 53,
-		},
+		LocalAddr: &net.UDPAddr{IP: extIP},
 	}
 	r := &net.Resolver{
 		Dial: d.DialContext,

@@ -23,15 +23,12 @@ func NewC2DNS() *C2DNS {
 // Simulate c2 dns traffic.
 func (*C2DNS) Simulate(extIP net.IP, host string) error {
 	d := &net.Dialer{
-		LocalAddr: &net.UDPAddr{
-			IP:   extIP,
-			Port: 53,
-		},
+		LocalAddr: &net.UDPAddr{IP: extIP},
 	}
 	r := &net.Resolver{
 		Dial: d.DialContext,
 	}
-	_, err := r.LookupAddr(context.Background(), host)
+	_, err := r.LookupHost(context.Background(), host)
 	return err
 }
 
