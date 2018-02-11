@@ -74,6 +74,7 @@ type simulatorInfo struct {
 	infoRun     string
 	s           simulator.Simulator
 	timeout     time.Duration
+	displayPort bool
 }
 
 var allsimualtors = []simulatorInfo{
@@ -83,6 +84,7 @@ var allsimualtors = []simulatorInfo{
 		"Resolving %s",
 		simulator.NewC2DNS(),
 		1 * time.Second,
+		false,
 	},
 	{
 		"dga",
@@ -90,6 +92,7 @@ var allsimualtors = []simulatorInfo{
 		"Resolving %s",
 		simulator.NewDGA(),
 		1 * time.Second,
+		false,
 	},
 	{
 		"scan",
@@ -100,6 +103,7 @@ var allsimualtors = []simulatorInfo{
 		"Port scanning %s",
 		simulator.NewPortScan(),
 		100 * time.Millisecond,
+		false,
 	},
 	{
 		"spambot",
@@ -109,6 +113,7 @@ var allsimualtors = []simulatorInfo{
 		"Connecting to %s",
 		simulator.NewSpambot(),
 		1 * time.Second,
+		true,
 	},
 	{
 		"tunnel",
@@ -116,6 +121,7 @@ var allsimualtors = []simulatorInfo{
 		"Resolving %s",
 		simulator.NewTunnel(),
 		1 * time.Second,
+		false,
 	},
 }
 
@@ -141,7 +147,11 @@ func run(simulators []simulatorInfo, extIP net.IP) error {
 
 			// only print hostname when it has changed
 			if prevHostname != hostname {
-				printMsg(s.name, fmt.Sprintf(s.infoRun, host))
+				if s.displayPort {
+					printMsg(s.name, fmt.Sprintf(s.infoRun, host))
+				} else {
+					printMsg(s.name, fmt.Sprintf(s.infoRun, hostname))
+				}
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 			s.s.Simulate(ctx, extIP, host)
