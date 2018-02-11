@@ -17,7 +17,7 @@ func newRunCommand() *cobra.Command {
 	var (
 		fast           bool
 		ifaceName      string
-		simulatorNames = []string{"c2-dns", "dga", "scan", "tunnel"}
+		simulatorNames = []string{"c2-dns", "dga", "scan", "spambot", "tunnel"}
 	)
 	cmd := &cobra.Command{
 		Use:   fmt.Sprintf("run [%s]", strings.Join(simulatorNames, "|")),
@@ -100,6 +100,15 @@ var allsimualtors = []simulatorInfo{
 		0,
 	},
 	{
+		"spambot",
+		[]string{
+			"Preparing random sample of Internet mail servers",
+		},
+		"Connecting to %s",
+		simulator.NewSpambot(),
+		500 * time.Millisecond,
+	},
+	{
 		"tunnel",
 		[]string{"Preparing DNS tunnel hostnames"},
 		"Resolving %s",
@@ -130,7 +139,7 @@ func run(simulators []simulatorInfo, extIP net.IP, interval time.Duration) error
 
 			// only print hostname when it has changed
 			if prevHostname != hostname {
-				printMsg(s.name, fmt.Sprintf(s.infoRun, hostname))
+				printMsg(s.name, fmt.Sprintf(s.infoRun, host))
 			}
 			s.s.Simulate(extIP, host)
 			time.Sleep(s.interval)
