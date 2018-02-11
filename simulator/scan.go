@@ -55,7 +55,7 @@ func (*PortScan) Simulate(extIP net.IP, host string) error {
 	return nil
 }
 
-// Hosts returns host:port generated from RFC 1918 addresses
+// Hosts returns host:port generated from RFC 1918 addresses.
 func (s *PortScan) Hosts() ([]string, error) {
 	var (
 		hosts []string
