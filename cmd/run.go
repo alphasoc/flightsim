@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"strings"
@@ -13,12 +14,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	fast           bool
+	ifaceName      string
+	simulatorNames = []string{"c2-dns", "dga", "scan", "spambot", "tunnel"}
+)
+
 func newRunCommand() *cobra.Command {
-	var (
-		fast           bool
-		ifaceName      string
-		simulatorNames = []string{"c2-dns", "dga", "scan", "spambot", "tunnel"}
-	)
 	cmd := &cobra.Command{
 		Use:   fmt.Sprintf("run [%s]", strings.Join(simulatorNames, "|")),
 		Short: "Run all simulators (default) or a particular test",
@@ -39,14 +41,14 @@ func newRunCommand() *cobra.Command {
 			}
 
 			simulators := selectSimulators(simulatorNames)
-			interval := 2 * time.Second
+
 			if fast {
-				interval = 0
 				for i := range simulators {
-					simulators[i].interval = 0
+					simulators[i].timeout = 100 * time.Millisecond
 				}
 			}
-			run(simulators, extIP, interval)
+
+			run(simulators, extIP)
 			return nil
 		},
 	}
@@ -71,7 +73,7 @@ type simulatorInfo struct {
 	infoHeaders []string
 	infoRun     string
 	s           simulator.Simulator
-	interval    time.Duration
+	timeout     time.Duration
 }
 
 var allsimualtors = []simulatorInfo{
@@ -80,14 +82,14 @@ var allsimualtors = []simulatorInfo{
 		[]string{"Preparing random sample of current C2 domains"},
 		"Resolving %s",
 		simulator.NewC2DNS(),
-		500 * time.Millisecond,
+		1 * time.Second,
 	},
 	{
 		"dga",
 		[]string{"Generating list of DGA domains"},
 		"Resolving %s",
 		simulator.NewDGA(),
-		500 * time.Millisecond,
+		1 * time.Second,
 	},
 	{
 		"scan",
@@ -97,7 +99,7 @@ var allsimualtors = []simulatorInfo{
 		},
 		"Port scanning %s",
 		simulator.NewPortScan(),
-		0,
+		100 * time.Millisecond,
 	},
 	{
 		"spambot",
@@ -106,28 +108,28 @@ var allsimualtors = []simulatorInfo{
 		},
 		"Connecting to %s",
 		simulator.NewSpambot(),
-		500 * time.Millisecond,
+		1 * time.Second,
 	},
 	{
 		"tunnel",
 		[]string{"Preparing DNS tunnel hostnames"},
 		"Resolving %s",
 		simulator.NewTunnel(),
-		500 * time.Millisecond,
+		1 * time.Second,
 	},
 }
 
-func run(simulators []simulatorInfo, extIP net.IP, interval time.Duration) error {
+func run(simulators []simulatorInfo, extIP net.IP) error {
 	printWelcome(extIP.String())
 	printHeader()
 	for _, s := range simulators {
 		printMsg(s.name, "Starting")
 		printMsg(s.name, s.infoHeaders...)
-		time.Sleep(interval)
 
 		hosts, err := s.s.Hosts()
 		if err != nil {
-			printMsg(s.name, color.RedString("failed ")+err.Error())
+			printMsg(s.name, color.RedString("failed: ")+err.Error())
+			continue
 		}
 
 		var prevHostname string
@@ -141,8 +143,12 @@ func run(simulators []simulatorInfo, extIP net.IP, interval time.Duration) error
 			if prevHostname != hostname {
 				printMsg(s.name, fmt.Sprintf(s.infoRun, host))
 			}
-			s.s.Simulate(extIP, host)
-			time.Sleep(s.interval)
+			ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
+			s.s.Simulate(ctx, extIP, host)
+			if !fast {
+				<-ctx.Done()
+			}
+			cancel()
 			prevHostname = hostname
 		}
 		printMsg(s.name, "Finished")

@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"strings"
-	"time"
 
 	"github.com/alphasoc/flightsim/utils"
 )
@@ -18,15 +17,13 @@ func NewTunnel() *Tunnel {
 }
 
 // Simulate lookups for txt records for give host.
-func (*Tunnel) Simulate(extIP net.IP, host string) error {
+func (*Tunnel) Simulate(ctx context.Context, extIP net.IP, host string) error {
 	d := &net.Dialer{
 		LocalAddr: &net.UDPAddr{IP: extIP},
 	}
 	r := &net.Resolver{
 		Dial: d.DialContext,
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-	defer cancel()
 
 	_, err := r.LookupTXT(ctx, host)
 	return err

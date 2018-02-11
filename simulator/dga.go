@@ -20,7 +20,7 @@ func NewDGA() *DGA {
 }
 
 // Simulate dga traffic.
-func (*DGA) Simulate(extIP net.IP, host string) error {
+func (*DGA) Simulate(ctx context.Context, extIP net.IP, host string) error {
 	d := &net.Dialer{
 		LocalAddr: &net.UDPAddr{IP: extIP},
 	}
@@ -28,7 +28,7 @@ func (*DGA) Simulate(extIP net.IP, host string) error {
 		Dial: d.DialContext,
 	}
 
-	_, err := r.LookupHost(context.Background(), host)
+	_, err := r.LookupHost(ctx, host)
 	return err
 }
 

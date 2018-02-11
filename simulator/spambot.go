@@ -1,10 +1,10 @@
 package simulator
 
 import (
+	"context"
 	"math/rand"
 	"net"
 	"strings"
-	"time"
 )
 
 //List of domain from https://github.com/mailcheck/mailcheck/wiki/List-of-Popular-Domains
@@ -65,13 +65,12 @@ func NewSpambot() *Spambot {
 }
 
 // Simulate port scanning for given host.
-func (*Spambot) Simulate(extIP net.IP, host string) error {
+func (*Spambot) Simulate(ctx context.Context, extIP net.IP, host string) error {
 	d := &net.Dialer{
 		LocalAddr: &net.TCPAddr{IP: extIP},
-		Timeout:   100 * time.Millisecond,
 	}
 
-	conn, err := d.Dial("tcp", host)
+	conn, err := d.DialContext(ctx, "tcp", host)
 	if err != nil {
 		return err
 	}
