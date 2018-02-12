@@ -17,7 +17,7 @@ import (
 var (
 	fast           bool
 	ifaceName      string
-	simulatorNames = []string{"c2-dns", "dga", "scan", "spambot", "tunnel"}
+	simulatorNames = []string{"c2-dns", "c2-ip", "dga", "scan", "spambot", "tunnel"}
 )
 
 func newRunCommand() *cobra.Command {
@@ -85,6 +85,14 @@ var allsimualtors = []simulatorInfo{
 		simulator.NewC2DNS(),
 		1 * time.Second,
 		false,
+	},
+	{
+		"c2-ip",
+		[]string{"Preparing random sample of current C2 IP:port pairs"},
+		"Connecting to %s",
+		simulator.NewC2IP(),
+		1 * time.Second,
+		true,
 	},
 	{
 		"dga",

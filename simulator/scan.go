@@ -48,7 +48,6 @@ func (*PortScan) Simulate(ctx context.Context, extIP net.IP, host string) error 
 	conn, err := d.DialContext(ctx, "tcp", host)
 	if err != nil {
 		return err
-
 	}
 	conn.Close()
 	return nil
