@@ -34,7 +34,7 @@ Flags:
 Use "flightsim [command] --help" for more information about a command
 ```
 
-The utility runs individual modules to generate malicious traffic. To perform all available tests, simply use `flightsim run` which will generate traffic using the first available non-loopback network interface. **NB:** when running the `c2-dns` module, flightsim will gather current C2 addresses from the [Cybercrime Tracker](http://cybercrime-tracker.net), so requires egress Internet access.
+The utility runs individual modules to generate malicious traffic. To perform all available tests, simply use `flightsim run` which will generate traffic using the first available non-loopback network interface. **NB:** when running the C2 modules, flightsim will gather current C2 addresses from the [Cybercrime Tracker](http://cybercrime-tracker.net) and AlphaSOC API, so requires egress Internet access.
 
 To list the available modules, use `flightsim run --help`. To execute a particular test, use `flightsim run <module>`, as below.
 
@@ -43,7 +43,7 @@ $ flightsim run --help
 Run all simulators (default) or a particular test
 
 Usage:
-  flightsim run [c2-dns|dga|scan|tunnel] [flags]
+  flightsim run [c2-dns|c2-ip|dga|scan|spambot|tunnel] [flags]
 
 Flags:
       --fast               run simulator fast without sleep intervals
@@ -86,6 +86,8 @@ The modules packaged with the utility are listed in the table below.
 | Module   | Description                                                                   |
 |----------|-------------------------------------------------------------------------------|
 | `c2-dns` | Generates a list of current C2 destinations and performs DNS requests to each |
+| `c2-ip`  | Connects to 10 random current C2 IP:port pairs to simulate egress sessions    |
 | `dga`    | Simulates DGA traffic using random labels and top-level domains               |
 | `scan`   | Performs a port scan of 10 random RFC 1918 addresses using common ports       |
+| `spambot`| Resolves and connects to random Internet SMTP servers to simulate a spam bot  |
 | `tunnel` | Generates DNS tunneling requests to *.sandbox.alphasoc.xyz                    |
