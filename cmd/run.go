@@ -17,7 +17,7 @@ import (
 var (
 	fast           bool
 	ifaceName      string
-	simulatorNames = []string{"c2-dns", "c2-ip", "dga", "scan", "spambot", "tunnel"}
+	simulatorNames = []string{"c2-dns", "c2-ip", "dga", "hijack", "scan", "spambot", "tunnel"}
 )
 
 func newRunCommand() *cobra.Command {
@@ -75,6 +75,9 @@ type simulatorInfo struct {
 	s           simulator.Simulator
 	timeout     time.Duration
 	displayPort bool
+
+	onError   string
+	onSuccess string
 }
 
 var allsimualtors = []simulatorInfo{
@@ -85,6 +88,8 @@ var allsimualtors = []simulatorInfo{
 		simulator.NewC2DNS(),
 		1 * time.Second,
 		false,
+		"",
+		"",
 	},
 	{
 		"c2-ip",
@@ -93,6 +98,8 @@ var allsimualtors = []simulatorInfo{
 		simulator.NewC2IP(),
 		1 * time.Second,
 		true,
+		"",
+		"",
 	},
 	{
 		"dga",
@@ -101,6 +108,18 @@ var allsimualtors = []simulatorInfo{
 		simulator.NewDGA(),
 		1 * time.Second,
 		false,
+		"",
+		"",
+	},
+	{
+		"hijack",
+		nil,
+		"Resolving %s via ns1.sandbox.alphasoc.xyz",
+		simulator.NewHijack(),
+		1 * time.Second,
+		false,
+		"Test failed (queries to arbitrary DNS servers are blocked)",
+		"Success! DNS hijacking is possible in this environment",
 	},
 	{
 		"scan",
@@ -112,6 +131,8 @@ var allsimualtors = []simulatorInfo{
 		simulator.NewPortScan(),
 		100 * time.Millisecond,
 		false,
+		"",
+		"",
 	},
 	{
 		"spambot",
@@ -122,6 +143,8 @@ var allsimualtors = []simulatorInfo{
 		simulator.NewSpambot(),
 		1 * time.Second,
 		true,
+		"",
+		"",
 	},
 	{
 		"tunnel",
@@ -130,6 +153,8 @@ var allsimualtors = []simulatorInfo{
 		simulator.NewTunnel(),
 		1 * time.Second,
 		false,
+		"",
+		"",
 	},
 }
 
@@ -162,7 +187,16 @@ func run(simulators []simulatorInfo, extIP net.IP) error {
 				}
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
-			s.s.Simulate(ctx, extIP, host)
+			if err := s.s.Simulate(ctx, extIP, host); err != nil {
+				if s.onError != "" {
+					printMsg(s.name, s.onError)
+				}
+			} else {
+				if s.onSuccess != "" {
+					printMsg(s.name, s.onSuccess)
+				}
+			}
+
 			if !fast {
 				<-ctx.Done()
 			}
