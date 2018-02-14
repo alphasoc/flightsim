@@ -14,12 +14,12 @@ import (
 // C2IP simulator.
 type C2IP struct{}
 
-// NewC2IP creates c2 dns simulator.
+// NewC2IP creates c2 ip simulator.
 func NewC2IP() *C2IP {
 	return &C2IP{}
 }
 
-// Simulate c2 dns traffic.
+// Simulate c2 ip traffic.
 func (*C2IP) Simulate(ctx context.Context, extIP net.IP, host string) error {
 	d := &net.Dialer{
 		LocalAddr: &net.TCPAddr{IP: extIP},
@@ -33,7 +33,7 @@ func (*C2IP) Simulate(ctx context.Context, extIP net.IP, host string) error {
 	return nil
 }
 
-// Hosts returns hosts marked c2 dns threat.
+// Hosts returns hosts marked c2 ip threat.
 func (t *C2IP) Hosts() ([]string, error) {
 	const nLookup = 10
 	resp, err := http.Get("https://api.open.wisdom.alphasoc.net/v1/c2-ip")
