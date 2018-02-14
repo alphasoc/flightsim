@@ -17,7 +17,7 @@ import (
 var (
 	fast           bool
 	ifaceName      string
-	simulatorNames = []string{"c2-dns", "c2-ip", "dga", "hijack", "scan", "spambot", "tunnel"}
+	simulatorNames = []string{"c2-dns", "c2-ip", "dga", "hijack", "scan", "sink", "spambot", "tunnel"}
 )
 
 func newRunCommand() *cobra.Command {
@@ -131,6 +131,16 @@ var allsimualtors = []simulatorInfo{
 		simulator.NewPortScan(),
 		100 * time.Millisecond,
 		false,
+		"",
+		"",
+	},
+	{
+		"sink",
+		[]string{"Preparing random sample of current sinkhole IP:port pairs"},
+		"Connecting to %s",
+		simulator.NewSinkhole(),
+		1 * time.Second,
+		true,
 		"",
 		"",
 	},
