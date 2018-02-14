@@ -33,7 +33,7 @@ func (*C2IP) Simulate(ctx context.Context, extIP net.IP, host string) error {
 	return nil
 }
 
-// Hosts returns hosts marked c2 ip threat.
+// Hosts returns hosts marked as c2 ip threat.
 func (t *C2IP) Hosts() ([]string, error) {
 	const nLookup = 10
 	resp, err := http.Get("https://api.open.wisdom.alphasoc.net/v1/c2-ip")
@@ -44,7 +44,7 @@ func (t *C2IP) Hosts() ([]string, error) {
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.Wrapf(err, "alnfo read body error")
+		return nil, errors.Wrapf(err, "api.open.wisdom.alphasoc.net read body error")
 	}
 
 	response := &struct {
@@ -52,7 +52,7 @@ func (t *C2IP) Hosts() ([]string, error) {
 	}{}
 
 	if err := json.Unmarshal(b, response); err != nil {
-		return nil, errors.Wrapf(err, "alnfo parse body error")
+		return nil, errors.Wrapf(err, "api.opne.wisdom.alphasoc.net parse body error")
 	}
 
 	var (
