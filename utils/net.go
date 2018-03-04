@@ -50,7 +50,7 @@ func getIPFromInterface(iface *net.Interface) (net.IP, error) {
 		case *net.IPNet:
 			ip = v.IP
 		}
-		if ip == nil || ip.IsLoopback() {
+		if ip == nil || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
 			continue
 		}
 		return ip, nil
