@@ -17,7 +17,7 @@ import (
 var (
 	fast           bool
 	ifaceName      string
-	simulatorNames = []string{"c2-dns", "c2-ip", "dga", "hijack", "scan", "sink", "spambot", "tunnel"}
+	simulatorNames = []string{"c2-dns", "c2-ip", "dga", "hijack", "scan", "sink", "spambot", "tor", "tunnel"}
 )
 
 func newRunCommand() *cobra.Command {
@@ -76,8 +76,9 @@ type simulatorInfo struct {
 	timeout     time.Duration
 	displayPort bool
 
-	onError   string
-	onSuccess string
+	onError         string
+	onSuccess       string
+	breakOnNilError bool
 }
 
 var allsimualtors = []simulatorInfo{
@@ -90,6 +91,7 @@ var allsimualtors = []simulatorInfo{
 		false,
 		"",
 		"",
+		false,
 	},
 	{
 		"c2-ip",
@@ -100,6 +102,7 @@ var allsimualtors = []simulatorInfo{
 		true,
 		"",
 		"",
+		false,
 	},
 	{
 		"dga",
@@ -110,6 +113,7 @@ var allsimualtors = []simulatorInfo{
 		false,
 		"",
 		"",
+		false,
 	},
 	{
 		"hijack",
@@ -120,6 +124,7 @@ var allsimualtors = []simulatorInfo{
 		false,
 		"Test failed (queries to arbitrary DNS servers are blocked)",
 		"Success! DNS hijacking is possible in this environment",
+		false,
 	},
 	{
 		"scan",
@@ -133,6 +138,7 @@ var allsimualtors = []simulatorInfo{
 		false,
 		"",
 		"",
+		false,
 	},
 	{
 		"sink",
@@ -143,6 +149,7 @@ var allsimualtors = []simulatorInfo{
 		true,
 		"",
 		"",
+		false,
 	},
 	{
 		"spambot",
@@ -155,6 +162,18 @@ var allsimualtors = []simulatorInfo{
 		true,
 		"",
 		"",
+		false,
+	},
+	{
+		"tor",
+		[]string{"Establishing Tor circuit"},
+		"Connecting to %s exit note",
+		simulator.NewTor(),
+		1 * time.Second,
+		true,
+		"Test failed (unable to establish Tor circuit)",
+		"Success! Tor use is permitted in this environment",
+		true,
 	},
 	{
 		"tunnel",
@@ -165,6 +184,7 @@ var allsimualtors = []simulatorInfo{
 		false,
 		"",
 		"",
+		false,
 	},
 }
 
@@ -204,6 +224,10 @@ func run(simulators []simulatorInfo, extIP net.IP) error {
 			} else {
 				if s.onSuccess != "" {
 					printMsg(s.name, s.onSuccess)
+				}
+				if s.breakOnNilError {
+					cancel()
+					break
 				}
 			}
 

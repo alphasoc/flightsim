@@ -43,7 +43,7 @@ $ flightsim run --help
 Run all simulators (default) or a particular test
 
 Usage:
-  flightsim run [c2-dns|c2-ip|dga|hijack|scan|sink|spambot|tunnel] [flags]
+  flightsim run [c2-dns|c2-ip|dga|hijack|scan|sink|spambot|tor|tunnel] [flags]
 
 Flags:
       --fast               run simulator fast without sleep intervals
@@ -92,4 +92,5 @@ The modules packaged with the utility are listed in the table below.
 | `scan`   | Performs a port scan of 10 random RFC 1918 addresses using common ports       |
 | `sink`   | Connects to 10 random sinkholed destinations run by security providers        |
 | `spambot`| Resolves and connects to random Internet SMTP servers to simulate a spam bot  |
+| `tor`    | Connects to 10 random tor circuit                                             |
 | `tunnel` | Generates DNS tunneling requests to *.sandbox.alphasoc.xyz                    |
