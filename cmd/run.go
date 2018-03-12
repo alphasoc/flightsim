@@ -17,7 +17,7 @@ import (
 var (
 	fast           bool
 	ifaceName      string
-	simulatorNames = []string{"c2-dns", "c2-ip", "dga", "hijack", "scan", "sink", "spambot", "tor", "tunnel"}
+	simulatorNames = []string{"c2-dns", "c2-ip", "dga", "hijack", "scan", "sink", "spambot", "tunnel"}
 )
 
 func newRunCommand() *cobra.Command {
@@ -164,17 +164,19 @@ var allsimualtors = []simulatorInfo{
 		"",
 		false,
 	},
-	{
-		"tor",
-		[]string{"Establishing Tor circuit"},
-		"Connecting to %s exit note",
-		simulator.NewTor(),
-		1 * time.Second,
-		true,
-		"Test failed (unable to establish Tor circuit)",
-		"Success! Tor use is permitted in this environment",
-		true,
-	},
+	/*
+		{
+			"tor",
+			[]string{"Establishing Tor circuit"},
+			"Connecting to %s exit note",
+			simulator.NewTor(),
+			1 * time.Second,
+			true,
+			"Test failed (unable to establish Tor circuit)",
+			"Success! Tor use is permitted in this environment",
+			true,
+		},
+	*/
 	{
 		"tunnel",
 		[]string{"Preparing DNS tunnel hostnames"},

@@ -1,7 +1,9 @@
 # Network Flight Simulator
+
 **flightsim** is a lightweight utility used to generate malicious network traffic and help security teams to evaluate security controls and network visibility. The tool performs tests to simulate DNS tunneling, DGA traffic, requests to known active C2 destinations, and other suspicious traffic patterns.
 
 ## Installation
+
 The utility can be built using [Golang](https://golang.org/doc/install) in any environment (e.g. Linux, MacOS, Windows), as follows:
 
 ```
@@ -9,6 +11,7 @@ go get -u github.com/alphasoc/flightsim/...
 ```
 
 ## Running Network Flight Simulator
+
 Upon installation, test flightsim as follows:
 
 ```
@@ -81,16 +84,16 @@ All done! Check your SIEM for alerts using the timestamps and details above.
 ```
 
 ## Description of Modules
+
 The modules packaged with the utility are listed in the table below.
 
-| Module   | Description                                                                   |
-|----------|-------------------------------------------------------------------------------|
-| `c2-dns` | Generates a list of current C2 destinations and performs DNS requests to each |
-| `c2-ip`  | Connects to 10 random current C2 IP:port pairs to simulate egress sessions    |
-| `dga`    | Simulates DGA traffic using random labels and top-level domains               |
-| `hijack` | Tests for DNS hijacking support via ns1.sandbox.alphasoc.xyz                  |
-| `scan`   | Performs a port scan of 10 random RFC 1918 addresses using common ports       |
-| `sink`   | Connects to 10 random sinkholed destinations run by security providers        |
-| `spambot`| Resolves and connects to random Internet SMTP servers to simulate a spam bot  |
-| `tor`    | Connects to 10 random tor circuit                                             |
-| `tunnel` | Generates DNS tunneling requests to *.sandbox.alphasoc.xyz                    |
+| Module    | Description                                                                   |
+| --------- | ----------------------------------------------------------------------------- |
+| `c2-dns`  | Generates a list of current C2 destinations and performs DNS requests to each |
+| `c2-ip`   | Connects to 10 random current C2 IP:port pairs to simulate egress sessions    |
+| `dga`     | Simulates DGA traffic using random labels and top-level domains               |
+| `hijack`  | Tests for DNS hijacking support via ns1.sandbox.alphasoc.xyz                  |
+| `scan`    | Performs a port scan of 10 random RFC 1918 addresses using common ports       |
+| `sink`    | Connects to 10 random sinkholed destinations run by security providers        |
+| `spambot` | Resolves and connects to random Internet SMTP servers to simulate a spam bot  |
+| `tunnel`  | Generates DNS tunneling requests to \*.sandbox.alphasoc.xyz                   |
