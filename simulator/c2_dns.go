@@ -33,7 +33,7 @@ func (*C2DNS) Simulate(ctx context.Context, extIP net.IP, host string) error {
 }
 
 // Hosts returns hosts marked c2 dns threat.
-func (t *C2DNS) Hosts() ([]string, error) {
+func (t *C2DNS) Hosts(size int) ([]string, error) {
 	resp, err := http.Get("https://cybercrime-tracker.net/all.php")
 	if err != nil {
 		return nil, errors.Wrapf(err, "cyber crime tracker get http")
@@ -54,7 +54,7 @@ func (t *C2DNS) Hosts() ([]string, error) {
 		return hosts, nil
 	}
 
-	for len(hosts) < 10 {
+	for len(hosts) < size {
 		c2URL := c2s[rand.Intn(len(c2s))]
 		u, err := url.Parse("http://" + c2URL)
 		if err != nil {

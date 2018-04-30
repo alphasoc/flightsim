@@ -30,11 +30,10 @@ func (*Tunnel) Simulate(ctx context.Context, extIP net.IP, host string) error {
 }
 
 // Hosts returns random generated hosts to alphasoc sandbox.
-func (t *Tunnel) Hosts() ([]string, error) {
-	const nLookup = 30
+func (t *Tunnel) Hosts(size int) ([]string, error) {
 	var hosts []string
 
-	for i := 0; i < nLookup; i++ {
+	for i := 0; i < size; i++ {
 		label := strings.ToLower(utils.RandString(30))
 		hosts = append(hosts, label+".sandbox.alphasoc.xyz")
 	}

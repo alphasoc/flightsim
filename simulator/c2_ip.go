@@ -34,8 +34,7 @@ func (*C2IP) Simulate(ctx context.Context, extIP net.IP, host string) error {
 }
 
 // Hosts returns hosts marked as c2 ip threat.
-func (t *C2IP) Hosts() ([]string, error) {
-	const nLookup = 10
+func (t *C2IP) Hosts(size int) ([]string, error) {
 	resp, err := http.Get("https://api.open.wisdom.alphasoc.net/v1/c2-ip")
 	if err != nil {
 		return nil, err
@@ -59,7 +58,7 @@ func (t *C2IP) Hosts() ([]string, error) {
 		hosts []string
 		idx   = rand.Perm(len(response.Hosts))
 	)
-	for n, i := 0, 0; n < len(response.Hosts) && i < nLookup; n, i = n+1, i+1 {
+	for n, i := 0, 0; n < len(response.Hosts) && i < size; n, i = n+1, i+1 {
 		hosts = append(hosts, response.Hosts[idx[n]])
 	}
 	return hosts, nil

@@ -79,14 +79,13 @@ func (*Spambot) Simulate(ctx context.Context, extIP net.IP, host string) error {
 }
 
 // Hosts returns host:port generated from RFC 1918 addresses.
-func (s *Spambot) Hosts() ([]string, error) {
-	const nLookup = 10
+func (s *Spambot) Hosts(size int) ([]string, error) {
 	var (
 		hosts []string
 		idx   = rand.Perm(len(domains))
 	)
 
-	for i, n := 0, 0; i < nLookup && n < len(domains); i, n = i+1, n+1 {
+	for i, n := 0, 0; i < size && n < len(domains); i, n = i+1, n+1 {
 		mx, err := net.LookupMX(domains[idx[n]])
 		if err != nil || len(mx) == 0 {
 			i--

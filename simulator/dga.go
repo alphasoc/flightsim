@@ -33,12 +33,11 @@ func (*DGA) Simulate(ctx context.Context, extIP net.IP, host string) error {
 }
 
 // Hosts returns random generated dga hosts.
-func (t *DGA) Hosts() ([]string, error) {
-	const nLookup = 5
+func (t *DGA) Hosts(size int) ([]string, error) {
 	var hosts []string
 
 	idx := rand.Perm(len(tlds))
-	for i := 0; i < nLookup; i++ {
+	for i := 0; i < size; i++ {
 		label := strings.ToLower(utils.RandString(7))
 		hosts = append(hosts, label+tlds[idx[0]])
 		hosts = append(hosts, label+tlds[idx[1]])

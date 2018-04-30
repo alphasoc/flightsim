@@ -9,5 +9,5 @@ import (
 // traffic for different kind of threaths.
 type Simulator interface {
 	Simulate(ctx context.Context, extIP net.IP, host string) error
-	Hosts() ([]string, error)
+	Hosts(size int) ([]string, error)
 }

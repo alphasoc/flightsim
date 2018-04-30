@@ -49,6 +49,7 @@ Usage:
   flightsim run [c2-dns|c2-ip|dga|hijack|scan|sink|spambot|tor|tunnel] [flags]
 
 Flags:
+  -n,                      number of hosts generated for each simulator (default 10)
       --fast               run simulator fast without sleep intervals
   -h, --help               help for run
   -i, --interface string   network interface to use

@@ -33,8 +33,7 @@ func (*Tor) Simulate(ctx context.Context, extIP net.IP, host string) error {
 }
 
 // Hosts returns tor exit nodes.
-func (s *Tor) Hosts() ([]string, error) {
-	const nLookup = 10
+func (s *Tor) Hosts(size int) ([]string, error) {
 
 	resp, err := http.Get("https://api.ipify.org")
 	if err != nil {
@@ -73,7 +72,7 @@ func (s *Tor) Hosts() ([]string, error) {
 		hosts []string
 		idx   = rand.Perm(len(ips))
 	)
-	for n, i := 0, 0; n < len(ips) && i < nLookup; n, i = n+1, i+1 {
+	for n, i := 0, 0; n < len(ips) && i < size; n, i = n+1, i+1 {
 		hosts = append(hosts, ips[idx[n]]+":80")
 	}
 

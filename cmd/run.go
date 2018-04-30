@@ -16,6 +16,7 @@ import (
 
 var (
 	fast           bool
+	size           int
 	ifaceName      string
 	simulatorNames = []string{"c2-dns", "c2-ip", "dga", "hijack", "scan", "sink", "spambot", "tunnel"}
 )
@@ -33,6 +34,10 @@ func newRunCommand() *cobra.Command {
 
 			if len(args) > 0 {
 				simulatorNames = args
+			}
+
+			if size <= 0 {
+				return fmt.Errorf("n must be positive")
 			}
 
 			extIP, err := utils.ExternalIP(ifaceName)
@@ -54,6 +59,7 @@ func newRunCommand() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&fast, "fast", false, "run simulator fast without sleep intervals")
+	cmd.Flags().IntVarP(&size, "", "n", 10, "number of hosts generated for each simulator")
 	cmd.Flags().StringVarP(&ifaceName, "interface", "i", "", "network interface to use")
 	return cmd
 }
@@ -197,7 +203,7 @@ func run(simulators []simulatorInfo, extIP net.IP) error {
 		printMsg(s.name, "Starting")
 		printMsg(s.name, s.infoHeaders...)
 
-		hosts, err := s.s.Hosts()
+		hosts, err := s.s.Hosts(size)
 		if err != nil {
 			printMsg(s.name, color.RedString("failed: ")+err.Error())
 			continue

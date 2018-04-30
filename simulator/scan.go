@@ -27,14 +27,12 @@ var (
 
 // PortScan simulator.
 type PortScan struct {
-	hostNo int
 	portNo int
 }
 
 // NewPortScan creates port scan simulator.
 func NewPortScan() *PortScan {
 	return &PortScan{
-		hostNo: 10,
 		portNo: 10,
 	}
 }
@@ -54,13 +52,13 @@ func (*PortScan) Simulate(ctx context.Context, extIP net.IP, host string) error 
 }
 
 // Hosts returns host:port generated from RFC 1918 addresses.
-func (s *PortScan) Hosts() ([]string, error) {
+func (s *PortScan) Hosts(size int) ([]string, error) {
 	var (
 		hosts []string
 		idx   = rand.Perm(len(scanPorts))
 	)
 
-	for i := 0; i < s.hostNo; i++ {
+	for i := 0; i < size; i++ {
 		ip := scanIPRanges[rand.Intn(len(scanIPRanges))]
 		ip.IP[len(ip.IP)-2] = byte(rand.Intn(256))
 		ip.IP[len(ip.IP)-1] = byte(rand.Intn(256))
