@@ -46,7 +46,7 @@ $ flightsim run --help
 Run all simulators (default) or a particular test
 
 Usage:
-  flightsim run [c2-dns|c2-ip|dga|hijack|scan|sink|spambot|tor|tunnel] [flags]
+  flightsim run [c2-dns|c2-ip|dga|hijack|scan|sink|spambot|tunnel] [flags]
 
 Flags:
   -n,                      number of hosts generated for each simulator (default 10)
