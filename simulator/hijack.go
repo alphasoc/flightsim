@@ -30,9 +30,10 @@ func (*Hijack) Simulate(ctx context.Context, extIP net.IP, host string) error {
 	if err != nil {
 		return err
 	}
-	if len(addrs) > 1 {
-		return errors.New("DNS domain hijacked")
+	if len(addrs) == 0 {
+		return errors.New("No DNS response")
 	}
+
 	return nil
 }
 
