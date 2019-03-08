@@ -68,8 +68,14 @@ workflows:
   version: 2
   build_and_deploy:
     jobs:
-      - build
-      - lint
+      - build:
+          filters:
+            tags:
+              only: /^v[0-9]+[.].*$/
+      - lint:
+          filters:
+            tags:
+              only: /^v[0-9]+[.].*$/
       - publish:
           context: github-alphasoc-deploy
           requires:
@@ -77,6 +83,6 @@ workflows:
             - lint
           filters:
             tags:
-              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/
+              only: /^v[0-9]+[.].*$/
             branches:
               ignore: /.*/
