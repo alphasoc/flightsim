@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.9
+      - image: circleci/golang:1.11
     working_directory: /go/src/github.com/alphasoc/flightsim
     steps:
       - checkout
@@ -22,7 +22,7 @@ jobs:
             - flightsim-darwin-amd64
   lint:
     docker:
-      - image: circleci/golang:1.9
+      - image: circleci/golang:1.11
     working_directory: /go/src/github.com/alphasoc/flightsim
     steps:
       - checkout
@@ -50,7 +50,7 @@ jobs:
 
   publish:
     docker:
-      - image: circleci/golang:1.9
+      - image: circleci/golang:1.11
     working_directory: /go/src/github.com/alphasoc/flightsim
     steps:
       - attach_workspace:
