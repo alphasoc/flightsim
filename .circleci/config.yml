@@ -11,9 +11,9 @@ jobs:
       - run:
           name: build
           command: |
-            GOARCH=amd64 GOOS=windows go build -o flightsim-windows-amd64.exe -ldflags "-X github.com/alphasoc/flightsim/version.Version=$(git describe)"
-            GOARCH=amd64 GOOS=linux   go build -o flightsim-linux-amd64       -ldflags "-X github.com/alphasoc/flightsim/version.Version=$(git describe)"
-            GOARCH=amd64 GOOS=darwin  go build -o flightsim-darwin-amd64      -ldflags "-X github.com/alphasoc/flightsim/version.Version=$(git describe)"
+            GOARCH=amd64 GOOS=windows go build -o flightsim-windows-amd64.exe -ldflags "-X github.com/alphasoc/flightsim/cmd.Version=$(git describe)"
+            GOARCH=amd64 GOOS=linux   go build -o flightsim-linux-amd64       -ldflags "-X github.com/alphasoc/flightsim/cmd.Version=$(git describe)"
+            GOARCH=amd64 GOOS=darwin  go build -o flightsim-darwin-amd64      -ldflags "-X github.com/alphasoc/flightsim/cmd.Version=$(git describe)"
       - persist_to_workspace:
           root: .
           paths:

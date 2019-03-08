@@ -9,7 +9,6 @@ import (
 
 	"github.com/alphasoc/flightsim/simulator"
 	"github.com/alphasoc/flightsim/utils"
-	"github.com/alphasoc/flightsim/version"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
@@ -268,7 +267,7 @@ AlphaSOC Network Flight Simulator™ %s (https://github.com/alphasoc/flightsim)
 The IP address of the network interface is %s
 The current time is %s
 
-`, version.Version, ip, time.Now().Format("02-Jan-06 15:04:05"))
+`, Version, ip, time.Now().Format("02-Jan-06 15:04:05"))
 }
 
 func printGoodbay() {
