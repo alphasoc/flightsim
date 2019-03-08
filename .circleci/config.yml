@@ -59,7 +59,7 @@ jobs:
           name: publish
           command: |
             go get github.com/aktau/github-release
-            github-release release --user alphasoc --repo flightsim --tag $CIRCLE_TAG
+            github-release release --draft --user alphasoc --repo flightsim --tag $CIRCLE_TAG
             github-release upload  --user alphasoc --repo flightsim --tag $CIRCLE_TAG --name flightsim-windows-amd64.exe --file flightsim-windows-amd64.exe
             github-release upload  --user alphasoc --repo flightsim --tag $CIRCLE_TAG --name flightsim-linux-amd64 --file flightsim-linux-amd64
             github-release upload  --user alphasoc --repo flightsim --tag $CIRCLE_TAG --name flightsim-darwin-amd64 --file flightsim-darwin-amd64
@@ -71,6 +71,7 @@ workflows:
       - build
       - lint
       - publish:
+          context: github-alphasoc-deploy
           requires:
             - build
             - lint
