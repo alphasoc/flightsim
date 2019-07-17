@@ -246,7 +246,7 @@ func run(simulators []simulatorInfo, extIP net.IP) error {
 		}
 		printMsg(s.name, "Finished")
 	}
-	printGoodbay()
+	printGoodbye()
 	return nil
 }
 
@@ -270,6 +270,6 @@ The current time is %s
 `, Version, ip, time.Now().Format("02-Jan-06 15:04:05"))
 }
 
-func printGoodbay() {
+func printGoodbye() {
 	fmt.Printf("\nAll done! Check your SIEM for alerts using the timestamps and details above.\n")
 }
