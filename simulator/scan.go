@@ -10,7 +10,7 @@ import (
 var (
 	scanPorts = []int{21, 22, 23, 25, 80, 88, 111, 135, 139, 143, 389, 443, 445, 1433, 1521, 3306, 3389, 5432, 5900, 6000, 8443}
 
-	// IP ranges are for TEST-NET-[123] networks, as per RFC5737.
+	// IP ranges are for TEST-NET-[123] networks, as per RFC 5737.
 	// These IPs should be safe to scan as they're not assigned.
 	scanIPRanges = []*net.IPNet{
 		{
@@ -72,7 +72,7 @@ func (*PortScan) Simulate(ctx context.Context, extIP net.IP, host string) error 
 	return nil
 }
 
-// Hosts returns host:port generated from RFC 1918 addresses.
+// Hosts returns host:port generated from RFC 5737 addresses.
 func (s *PortScan) Hosts(size int) ([]string, error) {
 	var hosts []string
 

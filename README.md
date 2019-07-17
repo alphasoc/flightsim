@@ -91,10 +91,10 @@ The modules packaged with the utility are listed in the table below.
 | Module    | Description                                                                   |
 | --------- | ----------------------------------------------------------------------------- |
 | `c2-dns`  | Generates a list of current C2 destinations and performs DNS requests to each |
-| `c2-ip`   | Connects to 10 random current C2 IP:port pairs to simulate egress sessions    |
+| `c2-ip`   | Connects to random current C2 IP:port pairs to simulate egress sessions       |
 | `dga`     | Simulates DGA traffic using random labels and top-level domains               |
 | `hijack`  | Tests for DNS hijacking support via ns1.sandbox.alphasoc.xyz                  |
-| `scan`    | Performs a port scan of 10 random RFC 1918 addresses using common ports       |
-| `sink`    | Connects to 10 random sinkholed destinations run by security providers        |
+| `scan`    | Performs a port scan to random RFC 5737 addresses using common ports          |
+| `sink`    | Connects to random sinkholed destinations run by security providers           |
 | `spambot` | Resolves and connects to random Internet SMTP servers to simulate a spam bot  |
 | `tunnel`  | Generates DNS tunneling requests to \*.sandbox.alphasoc.xyz                   |

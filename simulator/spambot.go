@@ -59,12 +59,12 @@ var domains = []string{
 // Spambot simulator.
 type Spambot struct{}
 
-// NewSpambot creates port scan simulator.
+// NewSpambot creates a Spambot simulator.
 func NewSpambot() *Spambot {
 	return &Spambot{}
 }
 
-// Simulate port scanning for given host.
+// Simulate connects to SMTP server provided in host.
 func (*Spambot) Simulate(ctx context.Context, extIP net.IP, host string) error {
 	d := &net.Dialer{
 		LocalAddr: &net.TCPAddr{IP: extIP},
@@ -78,7 +78,7 @@ func (*Spambot) Simulate(ctx context.Context, extIP net.IP, host string) error {
 	return nil
 }
 
-// Hosts returns host:port generated from RFC 1918 addresses.
+// Hosts returns random SMTP servers.
 func (s *Spambot) Hosts(size int) ([]string, error) {
 	var (
 		hosts []string
