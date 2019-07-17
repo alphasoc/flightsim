@@ -134,12 +134,12 @@ var allsimualtors = []simulatorInfo{
 	{
 		"scan",
 		[]string{
-			"Preparing random sample of RFC 1918 destinations",
-			"Preparing random sample of common TCP destination ports",
+			"Preparing random sample of RFC 5737 destinations",
+			// "Preparing random sample of common TCP destination ports",
 		},
 		"Port scanning %s",
 		simulator.NewPortScan(),
-		100 * time.Millisecond,
+		30 * time.Millisecond,
 		false,
 		"",
 		"",
