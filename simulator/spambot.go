@@ -1,7 +1,6 @@
 package simulator
 
 import (
-	"context"
 	"math/rand"
 	"net"
 	"strings"
@@ -57,25 +56,13 @@ var domains = []string{
 }
 
 // Spambot simulator.
-type Spambot struct{}
+type Spambot struct {
+	TCPConnectSimulator
+}
 
 // NewSpambot creates a Spambot simulator.
 func NewSpambot() *Spambot {
 	return &Spambot{}
-}
-
-// Simulate connects to SMTP server provided in host.
-func (*Spambot) Simulate(ctx context.Context, extIP net.IP, host string) error {
-	d := &net.Dialer{
-		LocalAddr: &net.TCPAddr{IP: extIP},
-	}
-
-	conn, err := d.DialContext(ctx, "tcp", host)
-	if err != nil {
-		return err
-	}
-	conn.Close()
-	return nil
 }
 
 // Hosts returns random SMTP servers.

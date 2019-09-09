@@ -1,36 +1,22 @@
 package simulator
 
 import (
-	"context"
 	"encoding/json"
 	"io/ioutil"
 	"math/rand"
-	"net"
 	"net/http"
 
 	"github.com/pkg/errors"
 )
 
 // C2IP simulator.
-type C2IP struct{}
+type C2IP struct {
+	TCPConnectSimulator
+}
 
 // NewC2IP creates c2 ip simulator.
 func NewC2IP() *C2IP {
 	return &C2IP{}
-}
-
-// Simulate c2 ip traffic.
-func (*C2IP) Simulate(ctx context.Context, extIP net.IP, host string) error {
-	d := &net.Dialer{
-		LocalAddr: &net.TCPAddr{IP: extIP},
-	}
-
-	conn, err := d.DialContext(ctx, "tcp", host)
-	if err != nil {
-		return err
-	}
-	conn.Close()
-	return nil
 }
 
 // Hosts returns hosts marked as c2 ip threat.

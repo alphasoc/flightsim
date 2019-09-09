@@ -1,35 +1,21 @@
 package simulator
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
-	"net"
 	"net/http"
 	"strings"
 )
 
 // Tor simulator.
-type Tor struct{}
+type Tor struct {
+	TCPConnectSimulator
+}
 
 // NewTor creates tor client simulator.
 func NewTor() *Tor {
 	return &Tor{}
-}
-
-// Simulate tor connection to the network.
-func (*Tor) Simulate(ctx context.Context, extIP net.IP, host string) error {
-	d := &net.Dialer{
-		LocalAddr: &net.TCPAddr{IP: extIP},
-	}
-
-	conn, err := d.DialContext(ctx, "tcp", host)
-	if err != nil {
-		return err
-	}
-	conn.Close()
-	return nil
 }
 
 // Hosts returns tor exit nodes.

@@ -1,9 +1,7 @@
 package simulator
 
 import (
-	"context"
 	"math/rand"
-	"net"
 	"strings"
 
 	"github.com/alphasoc/flightsim/utils"
@@ -12,24 +10,13 @@ import (
 var tlds = []string{".com", ".net", ".biz", ".top", ".info", ".xyz", ".space"}
 
 // DGA simulator.
-type DGA struct{}
+type DGA struct {
+	DNSResolveSimulator
+}
 
 // NewDGA creates domain generation algorithm simulator
 func NewDGA() *DGA {
 	return &DGA{}
-}
-
-// Simulate dga traffic.
-func (*DGA) Simulate(ctx context.Context, extIP net.IP, host string) error {
-	d := &net.Dialer{
-		LocalAddr: &net.UDPAddr{IP: extIP},
-	}
-	r := &net.Resolver{
-		Dial: d.DialContext,
-	}
-
-	_, err := r.LookupHost(ctx, host)
-	return err
 }
 
 // Hosts returns random generated dga hosts.

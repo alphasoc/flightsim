@@ -1,36 +1,22 @@
 package simulator
 
 import (
-	"context"
 	"encoding/json"
 	"io/ioutil"
 	"math/rand"
-	"net"
 	"net/http"
 
 	"github.com/pkg/errors"
 )
 
 // Sinkhole simulator.
-type Sinkhole struct{}
+type Sinkhole struct {
+	TCPConnectSimulator
+}
 
 // NewSinkhole creates sinkhole simulator.
 func NewSinkhole() *Sinkhole {
 	return &Sinkhole{}
-}
-
-// Simulate sinkhole traffic.
-func (*Sinkhole) Simulate(ctx context.Context, extIP net.IP, host string) error {
-	d := &net.Dialer{
-		LocalAddr: &net.TCPAddr{IP: extIP},
-	}
-
-	conn, err := d.DialContext(ctx, "tcp", host)
-	if err != nil {
-		return err
-	}
-	conn.Close()
-	return nil
 }
 
 // Hosts returns hosts marked as sinkhole threat.

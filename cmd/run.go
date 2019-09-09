@@ -77,7 +77,7 @@ type simulatorInfo struct {
 	name        string
 	infoHeaders []string
 	infoRun     string
-	s           simulator.Simulator
+	s           simulator.Module
 	timeout     time.Duration
 	displayPort bool
 

@@ -1,7 +1,6 @@
 package simulator
 
 import (
-	"context"
 	"io/ioutil"
 	"math/rand"
 	"net"
@@ -13,23 +12,13 @@ import (
 )
 
 // C2DNS simulator.
-type C2DNS struct{}
+type C2DNS struct {
+	DNSResolveSimulator
+}
 
 // NewC2DNS creates c2 dns simulator.
 func NewC2DNS() *C2DNS {
 	return &C2DNS{}
-}
-
-// Simulate c2 dns traffic.
-func (*C2DNS) Simulate(ctx context.Context, extIP net.IP, host string) error {
-	d := &net.Dialer{
-		LocalAddr: &net.UDPAddr{IP: extIP},
-	}
-	r := &net.Resolver{
-		Dial: d.DialContext,
-	}
-	_, err := r.LookupHost(ctx, host)
-	return err
 }
 
 // Hosts returns hosts marked c2 dns threat.

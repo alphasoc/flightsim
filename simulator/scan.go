@@ -1,7 +1,6 @@
 package simulator
 
 import (
-	"context"
 	"fmt"
 	"math/rand"
 	"net"
@@ -50,26 +49,12 @@ func randIP(network *net.IPNet) net.IP {
 
 // PortScan simulator.
 type PortScan struct {
+	TCPConnectSimulator
 }
 
 // NewPortScan creates port scan simulator.
 func NewPortScan() *PortScan {
 	return &PortScan{}
-}
-
-// Simulate port scanning for given host.
-func (*PortScan) Simulate(ctx context.Context, extIP net.IP, host string) error {
-	d := &net.Dialer{
-		LocalAddr: &net.TCPAddr{IP: extIP},
-	}
-
-	conn, err := d.DialContext(ctx, "tcp", host)
-	if err != nil {
-		return err
-	}
-	conn.Close()
-
-	return nil
 }
 
 // Hosts returns host:port generated from RFC 5737 addresses.
