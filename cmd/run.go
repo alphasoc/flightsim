@@ -82,13 +82,19 @@ func selectSimulations(names []string) ([]*Simulation, error) {
 	var res []*Simulation
 
 	for _, name := range names {
+		scope := ""
+		if i := strings.IndexByte(name, ':'); i >= 0 {
+			scope = name[i+1:]
+			name = name[:i]
+		}
+
 		var found bool
 		for _, m := range allModules {
 			if m.Name == name {
 				res = append(res, &Simulation{
 					Module: m,
-					Scope:  "", // TODO
-					Size:   0,  // TODO
+					Scope:  scope,
+					Size:   0, // TODO
 				})
 				found = true
 			}
@@ -218,6 +224,14 @@ type Simulation struct {
 	Size  int
 }
 
+func (s *Simulation) Name() string {
+	name := s.Module.Name
+	if s.Scope != "" {
+		name += ":" + s.Scope
+	}
+	return name
+}
+
 func run(sims []*Simulation, extIP net.IP) error {
 	printWelcome(extIP.String())
 	printHeader()
@@ -225,7 +239,7 @@ func run(sims []*Simulation, extIP net.IP) error {
 		printMsg(sim, "Starting")
 		printMsg(sim, sim.HeaderMsg)
 
-		hosts, err := sim.Module.Hosts("", size)
+		hosts, err := sim.Module.Hosts(sim.Scope, size)
 		if err != nil {
 			printMsg(sim, color.RedString("failed: ")+err.Error())
 			continue
@@ -267,7 +281,7 @@ func printMsg(s *Simulation, msg string) {
 	if msg == "" {
 		return
 	}
-	fmt.Printf("%s  %-7s %-8s  %s\n", time.Now().Format("15:04:05"), s.Name, s.Pipeline, msg)
+	fmt.Printf("%s  %-7s %-8s  %s\n", time.Now().Format("15:04:05"), s.Name(), s.Pipeline, msg)
 }
 
 func printWelcome(ip string) {
