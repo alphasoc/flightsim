@@ -19,7 +19,7 @@ func NewTor() *Tor {
 }
 
 // Hosts returns tor exit nodes.
-func (s *Tor) Hosts(size int) ([]string, error) {
+func (s *Tor) Hosts(scope string, size int) ([]string, error) {
 
 	resp, err := http.Get("https://api.ipify.org")
 	if err != nil {

@@ -20,7 +20,7 @@ func NewDGA() *DGA {
 }
 
 // Hosts returns random generated dga hosts.
-func (t *DGA) Hosts(size int) ([]string, error) {
+func (t *DGA) Hosts(scope string, size int) ([]string, error) {
 	var hosts []string
 
 	idx := rand.Perm(len(tlds))

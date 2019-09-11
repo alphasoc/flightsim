@@ -20,7 +20,7 @@ func NewSinkhole() *Sinkhole {
 }
 
 // Hosts returns hosts marked as sinkhole threat.
-func (t *Sinkhole) Hosts(size int) ([]string, error) {
+func (t *Sinkhole) Hosts(scope string, size int) ([]string, error) {
 	resp, err := http.Get("https://api.open.wisdom.alphasoc.net/v1/sinkhole")
 	if err != nil {
 		return nil, err

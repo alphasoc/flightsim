@@ -66,7 +66,7 @@ func NewSpambot() *Spambot {
 }
 
 // Hosts returns random SMTP servers.
-func (s *Spambot) Hosts(size int) ([]string, error) {
+func (s *Spambot) Hosts(scope string, size int) ([]string, error) {
 	var (
 		hosts []string
 		idx   = rand.Perm(len(domains))

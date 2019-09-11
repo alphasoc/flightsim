@@ -38,6 +38,6 @@ func (*Hijack) Simulate(ctx context.Context, extIP net.IP, host string) error {
 }
 
 // Hosts returns one domain to simulate dns query.
-func (s *Hijack) Hosts(_ int) ([]string, error) {
+func (s *Hijack) Hosts(scope string, n int) ([]string, error) {
 	return []string{"alphasoc.com"}, nil
 }

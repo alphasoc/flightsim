@@ -58,7 +58,7 @@ func NewPortScan() *PortScan {
 }
 
 // Hosts returns host:port generated from RFC 5737 addresses.
-func (s *PortScan) Hosts(size int) ([]string, error) {
+func (s *PortScan) Hosts(scope string, size int) ([]string, error) {
 	var hosts []string
 
 	// for each network generate size IPs and add all ports;

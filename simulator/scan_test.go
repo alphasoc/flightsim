@@ -29,7 +29,7 @@ func TestPortScan_Hosts_count(t *testing.T) {
 	}
 
 	ps := NewPortScan()
-	hosts, err := ps.Hosts(maxHostsPerNetwork * 100)
+	hosts, err := ps.Hosts("", maxHostsPerNetwork*100)
 	if err != nil {
 		t.Fatal(err)
 	}

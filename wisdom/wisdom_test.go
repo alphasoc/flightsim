@@ -8,7 +8,7 @@ import (
 func TestWisdomHosts_hosts(t *testing.T) {
 	w := NewWisdomHosts("c2", "dns")
 	size := 5
-	h, err := w.Hosts(size)
+	h, err := w.Hosts("", size)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -17,9 +17,9 @@ func TestWisdomHosts_hosts(t *testing.T) {
 	}
 }
 
-func TestWisdomHosts_ip(t *testing.T) {
+func TestWisdomHosts_ipWithFamily(t *testing.T) {
 	w := NewWisdomHosts("c2", "ip")
-	hosts, err := w.Hosts(1)
+	hosts, err := w.Hosts("trickbot", 1)
 	if err != nil {
 		t.Fatal(err)
 	}

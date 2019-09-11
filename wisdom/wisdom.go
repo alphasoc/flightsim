@@ -28,7 +28,7 @@ func NewWisdomHosts(category, hostType string) *WisdomHosts {
 	}
 }
 
-func (h *WisdomHosts) Hosts(size int) ([]string, error) {
+func (h *WisdomHosts) Hosts(scope string, size int) ([]string, error) {
 	reqURL, err := url.Parse("https://api.open.wisdom.alphasoc.net/v2/items")
 	if err != nil {
 		return nil, err
@@ -37,6 +37,9 @@ func (h *WisdomHosts) Hosts(size int) ([]string, error) {
 	q.Set("category", h.category)
 	q.Set("type", h.hostType)
 	q.Set("limit", strconv.Itoa(size))
+	if scope != "" {
+		q.Set("family", scope)
+	}
 	reqURL.RawQuery = q.Encode()
 
 	if h.Family != "" {

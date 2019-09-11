@@ -9,8 +9,9 @@ type Simulator interface {
 	Simulate(ctx context.Context, extIP net.IP, host string) error
 }
 
+// TODO: pass context
 type HostSource interface {
-	Hosts(size int) ([]string, error)
+	Hosts(scope string, size int) ([]string, error)
 }
 
 type Module interface {

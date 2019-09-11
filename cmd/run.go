@@ -43,9 +43,8 @@ func newRunCommand() *cobra.Command {
 		Use:   fmt.Sprintf("run [%s]", strings.Join(allModuleNames, "|")),
 		Short: "Run all simulators (default) or a particular test",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			modulesToRun := allModuleNames
-			if len(args) > 0 {
-				modulesToRun = args
+			if len(args) == 0 {
+				args = allModuleNames
 			}
 
 			if size <= 0 {
@@ -57,18 +56,18 @@ func newRunCommand() *cobra.Command {
 				return err
 			}
 
-			modules, err := selectModules(modulesToRun)
+			sims, err := selectSimulations(args)
 			if err != nil {
 				return err
 			}
 
 			if fast {
-				for i := range modules {
-					modules[i].Timeout = 100 * time.Millisecond
+				for i := range sims {
+					sims[i].Timeout = 100 * time.Millisecond
 				}
 			}
 
-			run(modules, extIP)
+			run(sims, extIP)
 			return nil
 		},
 	}
@@ -79,14 +78,18 @@ func newRunCommand() *cobra.Command {
 	return cmd
 }
 
-func selectModules(names []string) ([]Module, error) {
-	var ms []Module
+func selectSimulations(names []string) ([]*Simulation, error) {
+	var res []*Simulation
 
 	for _, name := range names {
 		var found bool
 		for _, m := range allModules {
 			if m.Name == name {
-				ms = append(ms, m)
+				res = append(res, &Simulation{
+					Module: m,
+					Scope:  "", // TODO
+					Size:   0,  // TODO
+				})
 				found = true
 			}
 		}
@@ -95,7 +98,7 @@ func selectModules(names []string) ([]Module, error) {
 		}
 	}
 
-	return ms, nil
+	return res, nil
 }
 
 type Pipeline string
@@ -106,7 +109,7 @@ const (
 )
 
 type Module struct {
-	Module     simulator.Module
+	simulator.Module
 	Name       string
 	Pipeline   Pipeline
 	HeaderMsg  string
@@ -118,7 +121,7 @@ type Module struct {
 }
 
 func (m *Module) FormatHost(host string) string {
-	if m.HidePort {
+	if m.HidePort || m.Pipeline == PipelineDNS {
 		h, _, _ := net.SplitHostPort(host)
 		if h != "" {
 			host = h
@@ -209,32 +212,38 @@ var allModules = []Module{
 	},
 }
 
-func run(modules []Module, extIP net.IP) error {
+type Simulation struct {
+	Module
+	Scope string
+	Size  int
+}
+
+func run(sims []*Simulation, extIP net.IP) error {
 	printWelcome(extIP.String())
 	printHeader()
-	for _, md := range modules {
-		printMsg(&md, "Starting")
-		printMsg(&md, md.HeaderMsg)
+	for _, sim := range sims {
+		printMsg(sim, "Starting")
+		printMsg(sim, sim.HeaderMsg)
 
-		hosts, err := md.Module.Hosts(size)
+		hosts, err := sim.Module.Hosts("", size)
 		if err != nil {
-			printMsg(&md, color.RedString("failed: ")+err.Error())
+			printMsg(sim, color.RedString("failed: ")+err.Error())
 			continue
 		}
 
 		var prevMsg string
 		for _, host := range hosts {
-			msg := md.FormatHost(host)
+			msg := sim.FormatHost(host)
 			if prevMsg != msg {
-				printMsg(&md, msg)
+				printMsg(sim, msg)
 			}
 			prevMsg = msg
 
-			ctx, cancel := context.WithTimeout(context.Background(), md.Timeout)
-			if err := md.Module.Simulate(ctx, extIP, host); err != nil {
-				printMsg(&md, md.FailMsg)
+			ctx, cancel := context.WithTimeout(context.Background(), sim.Timeout)
+			if err := sim.Module.Simulate(ctx, extIP, host); err != nil {
+				printMsg(sim, sim.FailMsg)
 			} else {
-				printMsg(&md, md.SuccessMsg)
+				printMsg(sim, sim.SuccessMsg)
 			}
 
 			if !fast {
@@ -242,7 +251,7 @@ func run(modules []Module, extIP net.IP) error {
 			}
 			cancel()
 		}
-		printMsg(&md, "Finished")
+		printMsg(sim, "Finished")
 	}
 
 	printGoodbye()
@@ -254,11 +263,11 @@ func printHeader() {
 	fmt.Println("--------------------------------------------------------------------------------")
 }
 
-func printMsg(m *Module, msg string) {
+func printMsg(s *Simulation, msg string) {
 	if msg == "" {
 		return
 	}
-	fmt.Printf("%s  %-7s %-8s  %s\n", time.Now().Format("15:04:05"), m.Name, m.Pipeline, msg)
+	fmt.Printf("%s  %-7s %-8s  %s\n", time.Now().Format("15:04:05"), s.Name, s.Pipeline, msg)
 }
 
 func printWelcome(ip string) {
