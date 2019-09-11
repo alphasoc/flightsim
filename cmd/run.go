@@ -4,35 +4,48 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/alphasoc/flightsim/simulator"
 	"github.com/alphasoc/flightsim/utils"
+	"github.com/alphasoc/flightsim/wisdom"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
 var (
-	fast           bool
-	size           int
-	ifaceName      string
-	simulatorNames = []string{"c2-dns", "c2-ip", "dga", "hijack", "scan", "sink", "spambot", "tunnel"}
+	fast      bool
+	size      int
+	ifaceName string
 )
+
+var allModuleNames []string = func() []string {
+	var (
+		names []string
+		seen  = make(map[string]bool)
+	)
+
+	for _, m := range allModules {
+		if !seen[m.Name] {
+			names = append(names, m.Name)
+			seen[m.Name] = true
+		}
+	}
+
+	sort.Strings(names)
+	return names
+}()
 
 func newRunCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   fmt.Sprintf("run [%s]", strings.Join(simulatorNames, "|")),
+		Use:   fmt.Sprintf("run [%s]", strings.Join(allModuleNames, "|")),
 		Short: "Run all simulators (default) or a particular test",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			for _, arg := range args {
-				if !utils.StringsContains(simulatorNames, arg) {
-					return fmt.Errorf("simulator %s not recognized", arg)
-				}
-			}
-
+			modulesToRun := allModuleNames
 			if len(args) > 0 {
-				simulatorNames = args
+				modulesToRun = args
 			}
 
 			if size <= 0 {
@@ -44,15 +57,18 @@ func newRunCommand() *cobra.Command {
 				return err
 			}
 
-			simulators := selectSimulators(simulatorNames)
+			modules, err := selectModules(modulesToRun)
+			if err != nil {
+				return err
+			}
 
 			if fast {
-				for i := range simulators {
-					simulators[i].timeout = 100 * time.Millisecond
+				for i := range modules {
+					modules[i].Timeout = 100 * time.Millisecond
 				}
 			}
 
-			run(simulators, extIP)
+			run(modules, extIP)
 			return nil
 		},
 	}
@@ -63,202 +79,186 @@ func newRunCommand() *cobra.Command {
 	return cmd
 }
 
-func selectSimulators(names []string) []simulatorInfo {
-	var simulators []simulatorInfo
-	for _, s := range allsimualtors {
-		if utils.StringsContains(names, s.name) {
-			simulators = append(simulators, s)
+func selectModules(names []string) ([]Module, error) {
+	var ms []Module
+
+	for _, name := range names {
+		var found bool
+		for _, m := range allModules {
+			if m.Name == name {
+				ms = append(ms, m)
+				found = true
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("unknown module: %s", name)
 		}
 	}
-	return simulators
+
+	return ms, nil
 }
 
-type simulatorInfo struct {
-	name        string
-	infoHeaders []string
-	infoRun     string
-	s           simulator.Module
-	timeout     time.Duration
-	displayPort bool
+type Pipeline string
 
-	onError         string
-	onSuccess       string
-	breakOnNilError bool
+const (
+	PipelineDNS Pipeline = "dns"
+	PipelineIP           = "ip"
+)
+
+type Module struct {
+	Module     simulator.Module
+	Name       string
+	Pipeline   Pipeline
+	HeaderMsg  string
+	HidePort   bool
+	HostMsg    string
+	Timeout    time.Duration
+	FailMsg    string
+	SuccessMsg string
 }
 
-var allsimualtors = []simulatorInfo{
-	{
-		"c2-dns",
-		[]string{"Preparing random sample of current C2 domains"},
-		"Resolving %s",
-		simulator.NewC2DNS(),
-		1 * time.Second,
-		false,
-		"",
-		"",
-		false,
+func (m *Module) FormatHost(host string) string {
+	if m.HidePort {
+		h, _, _ := net.SplitHostPort(host)
+		if h != "" {
+			host = h
+		}
+	}
+
+	f := m.HostMsg
+	if f == "" {
+		switch m.Pipeline {
+		case PipelineDNS:
+			f = "Resolving %s"
+		case PipelineIP:
+			f = "Connecting to %s"
+		}
+	}
+
+	return fmt.Sprintf(f, host)
+}
+
+var allModules = []Module{
+	Module{
+		Module:    simulator.CreateModule(wisdom.NewWisdomHosts("c2", "dns"), new(simulator.DNSResolveSimulator)),
+		Name:      "c2",
+		Pipeline:  PipelineDNS,
+		HeaderMsg: "Preparing random sample of current C2 domains",
+		Timeout:   1 * time.Second,
 	},
-	{
-		"c2-ip",
-		[]string{"Preparing random sample of current C2 IP:port pairs"},
-		"Connecting to %s",
-		simulator.NewC2IP(),
-		1 * time.Second,
-		true,
-		"",
-		"",
-		false,
+	Module{
+		Module:    simulator.CreateModule(wisdom.NewWisdomHosts("c2", "ip"), new(simulator.TCPConnectSimulator)),
+		Name:      "c2",
+		Pipeline:  PipelineIP,
+		HeaderMsg: "Preparing random sample of current C2 IP:port pairs",
+		Timeout:   1 * time.Second,
 	},
-	{
-		"dga",
-		[]string{"Generating list of DGA domains"},
-		"Resolving %s",
-		simulator.NewDGA(),
-		1 * time.Second,
-		false,
-		"",
-		"",
-		false,
+	Module{
+		Module:    simulator.NewDGA(),
+		Name:      "dga",
+		Pipeline:  PipelineDNS,
+		HeaderMsg: "Generating list of DGA domains",
+		Timeout:   1 * time.Second,
 	},
-	{
-		"hijack",
-		nil,
-		"Resolving %s via ns1.sandbox.alphasoc.xyz",
-		simulator.NewHijack(),
-		1 * time.Second,
-		false,
-		"Test failed (queries to arbitrary DNS servers are blocked)",
-		"Success! DNS hijacking is possible in this environment",
-		false,
+	Module{
+		Module:     simulator.NewHijack(),
+		Name:       "hijack",
+		Pipeline:   PipelineDNS,
+		HeaderMsg:  "",
+		HostMsg:    "Resolving %s via ns1.sandbox.alphasoc.xyz",
+		Timeout:    1 * time.Second,
+		FailMsg:    "Test failed (queries to arbitrary DNS servers are blocked)",
+		SuccessMsg: "Success! DNS hijacking is possible in this environment",
 	},
-	{
-		"scan",
-		[]string{
-			"Preparing random sample of RFC 5737 destinations",
-			// "Preparing random sample of common TCP destination ports",
-		},
-		"Port scanning %s",
-		simulator.NewPortScan(),
-		30 * time.Millisecond,
-		false,
-		"",
-		"",
-		false,
+	Module{
+		Module:    simulator.NewPortScan(),
+		Name:      "scan",
+		Pipeline:  PipelineIP,
+		HeaderMsg: "Preparing random sample of RFC 5737 destinations",
+		HostMsg:   "Port scanning %s",
+		HidePort:  true,
+		Timeout:   30 * time.Millisecond,
 	},
-	{
-		"sink",
-		[]string{"Preparing random sample of current sinkhole IP:port pairs"},
-		"Connecting to %s",
-		simulator.NewSinkhole(),
-		1 * time.Second,
-		true,
-		"",
-		"",
-		false,
+	Module{
+		Module:    simulator.CreateModule(wisdom.NewWisdomHosts("sinkholed", "dns"), new(simulator.DNSResolveSimulator)),
+		Name:      "sink",
+		Pipeline:  PipelineDNS,
+		HeaderMsg: "Preparing random sample of current sinkhole IP:port pairs",
+		Timeout:   1 * time.Second,
 	},
-	{
-		"spambot",
-		[]string{
-			"Preparing random sample of Internet mail servers",
-		},
-		"Connecting to %s",
-		simulator.NewSpambot(),
-		1 * time.Second,
-		true,
-		"",
-		"",
-		false,
+	Module{
+		Module:    simulator.CreateModule(wisdom.NewWisdomHosts("sinkholed", "ip"), new(simulator.TCPConnectSimulator)),
+		Name:      "sink",
+		Pipeline:  PipelineIP,
+		HeaderMsg: "Preparing random sample of current sinkhole IP:port pairs",
+		Timeout:   1 * time.Second,
 	},
-	/*
-		{
-			"tor",
-			[]string{"Establishing Tor circuit"},
-			"Connecting to %s exit note",
-			simulator.NewTor(),
-			1 * time.Second,
-			true,
-			"Test failed (unable to establish Tor circuit)",
-			"Success! Tor use is permitted in this environment",
-			true,
-		},
-	*/
-	{
-		"tunnel",
-		[]string{"Preparing DNS tunnel hostnames"},
-		"Resolving %s",
-		simulator.NewTunnel(),
-		1 * time.Second,
-		false,
-		"",
-		"",
-		false,
+	Module{
+		Module:    simulator.NewSpambot(),
+		Name:      "spambot",
+		Pipeline:  PipelineIP,
+		HeaderMsg: "Preparing random sample of Internet mail servers",
+		Timeout:   1 * time.Second,
+	},
+	Module{
+		Module:    simulator.NewTunnel(),
+		Name:      "tunnel",
+		Pipeline:  PipelineDNS,
+		HeaderMsg: "Preparing DNS tunnel hostnames",
+		Timeout:   1 * time.Second,
 	},
 }
 
-func run(simulators []simulatorInfo, extIP net.IP) error {
+func run(modules []Module, extIP net.IP) error {
 	printWelcome(extIP.String())
 	printHeader()
-	for _, s := range simulators {
-		printMsg(s.name, "Starting")
-		printMsg(s.name, s.infoHeaders...)
+	for _, md := range modules {
+		printMsg(&md, "Starting")
+		printMsg(&md, md.HeaderMsg)
 
-		hosts, err := s.s.Hosts(size)
+		hosts, err := md.Module.Hosts(size)
 		if err != nil {
-			printMsg(s.name, color.RedString("failed: ")+err.Error())
+			printMsg(&md, color.RedString("failed: ")+err.Error())
 			continue
 		}
 
-		var prevHostname string
+		var prevMsg string
 		for _, host := range hosts {
-			hostname, _, err := net.SplitHostPort(host)
-			if err != nil {
-				hostname = host
+			msg := md.FormatHost(host)
+			if prevMsg != msg {
+				printMsg(&md, msg)
 			}
+			prevMsg = msg
 
-			// only print hostname when it has changed
-			if prevHostname != hostname {
-				if s.displayPort {
-					printMsg(s.name, fmt.Sprintf(s.infoRun, host))
-				} else {
-					printMsg(s.name, fmt.Sprintf(s.infoRun, hostname))
-				}
-			}
-			ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
-			if err := s.s.Simulate(ctx, extIP, host); err != nil {
-				if s.onError != "" {
-					printMsg(s.name, s.onError)
-				}
+			ctx, cancel := context.WithTimeout(context.Background(), md.Timeout)
+			if err := md.Module.Simulate(ctx, extIP, host); err != nil {
+				printMsg(&md, md.FailMsg)
 			} else {
-				if s.onSuccess != "" {
-					printMsg(s.name, s.onSuccess)
-				}
-				if s.breakOnNilError {
-					cancel()
-					break
-				}
+				printMsg(&md, md.SuccessMsg)
 			}
 
 			if !fast {
 				<-ctx.Done()
 			}
 			cancel()
-			prevHostname = hostname
 		}
-		printMsg(s.name, "Finished")
+		printMsg(&md, "Finished")
 	}
+
 	printGoodbye()
 	return nil
 }
 
 func printHeader() {
-	fmt.Println("Time      Module   Description")
+	fmt.Println("Time      Module  Pipeline  Description")
 	fmt.Println("--------------------------------------------------------------------------------")
 }
 
-func printMsg(module string, msg ...string) {
-	for i := range msg {
-		fmt.Printf("%s  %-7s  %s\n", time.Now().Format("15:04:05"), module, msg[i])
+func printMsg(m *Module, msg string) {
+	if msg == "" {
+		return
 	}
+	fmt.Printf("%s  %-7s %-8s  %s\n", time.Now().Format("15:04:05"), m.Name, m.Pipeline, msg)
 }
 
 func printWelcome(ip string) {

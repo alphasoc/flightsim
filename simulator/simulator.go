@@ -14,33 +14,24 @@ type HostSource interface {
 }
 
 type Module interface {
-	Simulator
 	HostSource
+	Simulator
 }
 
-type DefaultSimulator struct {
-	ip  TCPConnectSimulator
-	dns DNSResolveSimulator
-}
-
-func (s *DefaultSimulator) Simulate(ctx context.Context, bind net.IP, dst string) error {
-	var sim Simulator
-
-	if ip := net.ParseIP(dst); ip != nil {
-		sim = s.ip
-	} else {
-		sim = s.dns
-	}
-
-	return sim.Simulate(ctx, bind, dst)
+func CreateModule(src HostSource, sim Simulator) Module {
+	return &struct {
+		HostSource
+		Simulator
+	}{src, sim}
 }
 
 type TCPConnectSimulator struct {
 }
 
 func (TCPConnectSimulator) Simulate(ctx context.Context, bind net.IP, dst string) error {
-	d := &net.Dialer{
-		LocalAddr: &net.TCPAddr{IP: bind},
+	d := &net.Dialer{}
+	if bind != nil {
+		d.LocalAddr = &net.UDPAddr{IP: bind}
 	}
 
 	conn, err := d.DialContext(ctx, "tcp", dst)
@@ -56,12 +47,18 @@ type DNSResolveSimulator struct {
 }
 
 func (DNSResolveSimulator) Simulate(ctx context.Context, bind net.IP, dst string) error {
-	d := &net.Dialer{
-		LocalAddr: &net.UDPAddr{IP: bind},
+	host, _, _ := net.SplitHostPort(dst)
+	if host == "" {
+		host = dst
+	}
+
+	d := &net.Dialer{}
+	if bind != nil {
+		d.LocalAddr = &net.UDPAddr{IP: bind}
 	}
 	r := &net.Resolver{
 		Dial: d.DialContext,
 	}
-	_, err := r.LookupHost(ctx, dst)
+	_, err := r.LookupHost(ctx, host)
 	return err
 }
