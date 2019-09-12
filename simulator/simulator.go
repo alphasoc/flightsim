@@ -6,7 +6,7 @@ import (
 )
 
 type Simulator interface {
-	Simulate(ctx context.Context, extIP net.IP, host string) error
+	Simulate(ctx context.Context, bind net.IP, host string) error
 }
 
 // TODO: pass context
@@ -32,7 +32,7 @@ type TCPConnectSimulator struct {
 func (TCPConnectSimulator) Simulate(ctx context.Context, bind net.IP, dst string) error {
 	d := &net.Dialer{}
 	if bind != nil {
-		d.LocalAddr = &net.UDPAddr{IP: bind}
+		d.LocalAddr = &net.TCPAddr{IP: bind}
 	}
 
 	conn, err := d.DialContext(ctx, "tcp", dst)
