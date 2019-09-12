@@ -12,7 +12,6 @@ import (
 	"github.com/alphasoc/flightsim/simulator"
 	"github.com/alphasoc/flightsim/utils"
 	"github.com/alphasoc/flightsim/wisdom"
-	"github.com/fatih/color"
 )
 
 var (
@@ -258,7 +257,7 @@ func run(sims []*Simulation, extIP net.IP) error {
 
 		hosts, err := sim.Module.Hosts(sim.Scope, size)
 		if err != nil {
-			printMsg(sim, color.RedString("failed: ")+err.Error())
+			printMsg(sim, "failed: "+err.Error())
 			continue
 		}
 

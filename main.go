@@ -23,7 +23,7 @@ Usage:
 Available commands:
     run         Run simulators
     help        Help about specific simulators
-    version     Prints the current version
+    version     Prints the version number
 
 Cheatsheet:
     flightsim run                Run all the simulators

@@ -3,37 +3,10 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "p5z5hdUt68Z3tK7Is+yLGrCNzoA=",
-			"path": "github.com/fatih/color",
-			"revision": "5df930a27be2502f99b292b7cc09ebad4d0891f4",
-			"revisionTime": "2017-09-26T11:14:11Z"
-		},
-		{
-			"checksumSHA1": "MrqRXuqj5suGXqcRUUwi+YA7PmE=",
-			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-colorable",
-			"path": "github.com/mattn/go-colorable",
-			"revision": "5df930a27be2502f99b292b7cc09ebad4d0891f4",
-			"revisionTime": "2017-09-26T11:14:11Z"
-		},
-		{
-			"checksumSHA1": "a/chskqRYBBHS8lDTpB3FQqgHb8=",
-			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-isatty",
-			"path": "github.com/mattn/go-isatty",
-			"revision": "5df930a27be2502f99b292b7cc09ebad4d0891f4",
-			"revisionTime": "2017-09-26T11:14:11Z"
-		},
-		{
 			"checksumSHA1": "rJab1YdNhQooDiBWNnt7TLWPyBU=",
 			"path": "github.com/pkg/errors",
 			"revision": "f15c970de5b76fac0b59abb32d62c17cc7bed265",
 			"revisionTime": "2017-10-18T19:55:50Z"
-		},
-		{
-			"checksumSHA1": "oBjdFvDUZpioGsB6URqe16hDQUg=",
-			"origin": "github.com/fatih/color/vendor/golang.org/x/sys/unix",
-			"path": "golang.org/x/sys/unix",
-			"revision": "5df930a27be2502f99b292b7cc09ebad4d0891f4",
-			"revisionTime": "2017-09-26T11:14:11Z"
 		}
 	],
 	"rootPath": "github.com/alphasoc/flightsim"
