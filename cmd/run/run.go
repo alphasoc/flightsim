@@ -1,7 +1,8 @@
-package cmd
+package run
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"net"
 	"sort"
@@ -12,7 +13,6 @@ import (
 	"github.com/alphasoc/flightsim/utils"
 	"github.com/alphasoc/flightsim/wisdom"
 	"github.com/fatih/color"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -38,44 +38,61 @@ var allModuleNames []string = func() []string {
 	return names
 }()
 
-func newRunCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   fmt.Sprintf("run [%s]", strings.Join(allModuleNames, "|")),
-		Short: "Run all simulators (default) or a particular test",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
-				args = allModuleNames
-			}
+var usage = `usage: flightsim run [flags] [modules]
 
-			if size <= 0 {
-				return fmt.Errorf("n must be positive")
-			}
+To run all available simulators, call:
 
-			extIP, err := utils.ExternalIP(ifaceName)
-			if err != nil {
-				return err
-			}
+    flightsim run
 
-			sims, err := selectSimulations(args)
-			if err != nil {
-				return err
-			}
+ To run a specific module:
 
-			if fast {
-				for i := range sims {
-					sims[i].Timeout = 100 * time.Millisecond
-				}
-			}
+    flightsim run c2
 
-			run(sims, extIP)
-			return nil
-		},
+Available modules:
+
+	%s
+
+Available flags:
+`
+
+func RunCmd(args []string) error {
+	cmdLine := flag.NewFlagSet("run", flag.ExitOnError)
+	cmdLine.BoolVar(&fast, "fast", false, "reduce sleep intervals between simulation events")
+	cmdLine.StringVar(&ifaceName, "iface", "", "network interface to use")
+	cmdLine.IntVar(&size, "size", 10, "number of hosts generated for each simulator")
+
+	cmdLine.Usage = func() {
+		fmt.Fprintf(cmdLine.Output(), usage, strings.Join(allModuleNames, ", "))
+		cmdLine.PrintDefaults()
+	}
+	cmdLine.Parse(args)
+
+	modules := cmdLine.Args()
+	if len(modules) == 0 {
+		modules = allModuleNames
 	}
 
-	cmd.Flags().BoolVar(&fast, "fast", false, "run simulator fast without sleep intervals")
-	cmd.Flags().IntVarP(&size, "", "n", 10, "number of hosts generated for each simulator")
-	cmd.Flags().StringVarP(&ifaceName, "interface", "i", "", "network interface to use")
-	return cmd
+	if size <= 0 {
+		return fmt.Errorf("size must be positive")
+	}
+
+	extIP, err := utils.ExternalIP(ifaceName)
+	if err != nil {
+		return err
+	}
+
+	sims, err := selectSimulations(modules)
+	if err != nil {
+		return err
+	}
+
+	if fast {
+		for i := range sims {
+			sims[i].Timeout = 100 * time.Millisecond
+		}
+	}
+
+	return run(sims, extIP)
 }
 
 func selectSimulations(names []string) ([]*Simulation, error) {
@@ -236,7 +253,7 @@ func run(sims []*Simulation, extIP net.IP) error {
 	printWelcome(extIP.String())
 	printHeader()
 	for _, sim := range sims {
-		printMsg(sim, "Starting")
+		// printMsg(sim, "Starting")
 		printMsg(sim, sim.HeaderMsg)
 
 		hosts, err := sim.Module.Hosts(sim.Scope, size)
@@ -265,34 +282,9 @@ func run(sims []*Simulation, extIP net.IP) error {
 			}
 			cancel()
 		}
-		printMsg(sim, "Finished")
+		// printMsg(sim, "Finished")
 	}
 
 	printGoodbye()
 	return nil
-}
-
-func printHeader() {
-	fmt.Println("Time      Module  Pipeline  Description")
-	fmt.Println("--------------------------------------------------------------------------------")
-}
-
-func printMsg(s *Simulation, msg string) {
-	if msg == "" {
-		return
-	}
-	fmt.Printf("%s  %-7s %-8s  %s\n", time.Now().Format("15:04:05"), s.Name(), s.Pipeline, msg)
-}
-
-func printWelcome(ip string) {
-	fmt.Printf(`
-AlphaSOC Network Flight Simulator™ %s (https://github.com/alphasoc/flightsim)
-The IP address of the network interface is %s
-The current time is %s
-
-`, Version, ip, time.Now().Format("02-Jan-06 15:04:05"))
-}
-
-func printGoodbye() {
-	fmt.Printf("\nAll done! Check your SIEM for alerts using the timestamps and details above.\n")
 }
