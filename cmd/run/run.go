@@ -168,14 +168,14 @@ var allModules = []Module{
 		Module:    simulator.CreateModule(wisdom.NewWisdomHosts("c2", "dns"), new(simulator.DNSResolveSimulator)),
 		Name:      "c2",
 		Pipeline:  PipelineDNS,
-		HeaderMsg: "Preparing random sample of current C2 domains",
+		HeaderMsg: "Preparing random sample of C2 domains",
 		Timeout:   1 * time.Second,
 	},
 	Module{
 		Module:    simulator.CreateModule(wisdom.NewWisdomHosts("c2", "ip"), new(simulator.TCPConnectSimulator)),
 		Name:      "c2",
 		Pipeline:  PipelineIP,
-		HeaderMsg: "Preparing random sample of current C2 IP:port pairs",
+		HeaderMsg: "Preparing random sample of C2 IP:port pairs",
 		Timeout:   1 * time.Second,
 	},
 	Module{
@@ -208,14 +208,14 @@ var allModules = []Module{
 		Module:    simulator.CreateModule(wisdom.NewWisdomHosts("sinkholed", "dns"), new(simulator.DNSResolveSimulator)),
 		Name:      "sink",
 		Pipeline:  PipelineDNS,
-		HeaderMsg: "Preparing random sample of current sinkhole IP:port pairs",
+		HeaderMsg: "Preparing random sample of sinkhole IP:port pairs",
 		Timeout:   1 * time.Second,
 	},
 	Module{
 		Module:    simulator.CreateModule(wisdom.NewWisdomHosts("sinkholed", "ip"), new(simulator.TCPConnectSimulator)),
 		Name:      "sink",
 		Pipeline:  PipelineIP,
-		HeaderMsg: "Preparing random sample of current sinkhole IP:port pairs",
+		HeaderMsg: "Preparing random sample of sinkhole IP:port pairs",
 		Timeout:   1 * time.Second,
 	},
 	Module{
