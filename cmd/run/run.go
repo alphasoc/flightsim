@@ -18,6 +18,7 @@ var (
 	fast      bool
 	size      int
 	ifaceName string
+	dryRun    bool
 )
 
 var allModuleNames []string = func() []string {
@@ -57,6 +58,7 @@ Available flags:
 func RunCmd(args []string) error {
 	cmdLine := flag.NewFlagSet("run", flag.ExitOnError)
 	cmdLine.BoolVar(&fast, "fast", false, "reduce sleep intervals between simulation events")
+	cmdLine.BoolVar(&dryRun, "dry", false, "print actions without performing any network activity")
 	cmdLine.StringVar(&ifaceName, "iface", "", "network interface to use")
 	cmdLine.IntVar(&size, "size", 10, "number of hosts generated for each simulator")
 
@@ -269,17 +271,19 @@ func run(sims []*Simulation, extIP net.IP) error {
 			}
 			prevMsg = msg
 
-			ctx, cancel := context.WithTimeout(context.Background(), sim.Timeout)
-			if err := sim.Module.Simulate(ctx, extIP, host); err != nil {
-				printMsg(sim, sim.FailMsg)
-			} else {
-				printMsg(sim, sim.SuccessMsg)
-			}
+			if !dryRun {
+				ctx, cancel := context.WithTimeout(context.Background(), sim.Timeout)
+				if err := sim.Module.Simulate(ctx, extIP, host); err != nil {
+					printMsg(sim, sim.FailMsg)
+				} else {
+					printMsg(sim, sim.SuccessMsg)
+				}
 
-			if !fast {
-				<-ctx.Done()
+				if !fast {
+					<-ctx.Done()
+				}
+				cancel()
 			}
-			cancel()
 		}
 		// printMsg(sim, "Finished")
 	}
