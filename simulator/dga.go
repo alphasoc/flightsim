@@ -23,12 +23,9 @@ func NewDGA() *DGA {
 func (t *DGA) Hosts(scope string, size int) ([]string, error) {
 	var hosts []string
 
-	idx := rand.Perm(len(tlds))
 	for i := 0; i < size; i++ {
 		label := strings.ToLower(utils.RandString(7))
-		hosts = append(hosts, label+tlds[idx[0]])
-		hosts = append(hosts, label+tlds[idx[1]])
-		hosts = append(hosts, label+tlds[idx[2]])
+		hosts = append(hosts, label+tlds[rand.Intn(len(tlds))])
 	}
 
 	return hosts, nil
