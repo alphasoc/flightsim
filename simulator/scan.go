@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+	"sort"
 )
 
 var (
@@ -62,25 +63,28 @@ func NewPortScan() *PortScan {
 func (s *PortScan) Hosts(scope string, size int) ([]string, error) {
 	var hosts []string
 
-	// for each network generate size IPs and add all ports;
-	// total number of hosts will be up to size * networks * ports
-	for _, network := range scanIPRanges {
-		// TODO: make caller responsible for deduplication
-		dedup := make(map[string]bool)
+	// TODO: make caller responsible for deduplication
+	dedup := make(map[string]bool)
 
-		for k := 0; k < size; k++ {
-			ip := randIP(network)
+	numOfNets := size/20 + 1
+	if numOfNets > len(scanIPRanges) {
+		numOfNets = len(scanIPRanges)
+	}
+	netIdx := rand.Perm(len(scanIPRanges))[:numOfNets]
 
-			key := ip.String()
-			if dedup[key] {
-				continue
-			}
-			dedup[key] = true
+	for k := 0; k < 2*size && len(hosts) < size; k++ {
+		// random IP from one of the defined IP ranges
+		ip := randIP(scanIPRanges[netIdx[len(hosts)%len(netIdx)]]).String()
 
-			hosts = append(hosts, ip.String())
+		if dedup[ip] {
+			continue
 		}
+		dedup[ip] = true
+
+		hosts = append(hosts, ip)
 	}
 
+	sort.Strings(hosts)
 	return hosts, nil
 }
 

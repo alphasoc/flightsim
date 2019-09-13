@@ -15,21 +15,17 @@ func TestRandIP(t *testing.T) {
 }
 
 func TestPortScan_Hosts_count(t *testing.T) {
-	// expected number of unique host:ip entries;
+	// expected number of unique hosts;
 	// this assumes we've generated all the possible pairs
 	expectedCount := 0
-	maxHostsPerNetwork := 0
 	for _, network := range scanIPRanges {
 		ones, zeros := network.Mask.Size()
 		hosts := (1 << uint(zeros-ones))
-		if hosts > maxHostsPerNetwork {
-			maxHostsPerNetwork = hosts
-		}
-		expectedCount += hosts * len(scanPorts)
+		expectedCount += hosts
 	}
 
 	ps := NewPortScan()
-	hosts, err := ps.Hosts("", maxHostsPerNetwork*100)
+	hosts, err := ps.Hosts("", expectedCount*100)
 	if err != nil {
 		t.Fatal(err)
 	}
