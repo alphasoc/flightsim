@@ -1,6 +1,7 @@
 package simulator
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"net"
@@ -49,7 +50,7 @@ func randIP(network *net.IPNet) net.IP {
 
 // PortScan simulator.
 type PortScan struct {
-	TCPConnectSimulator
+	tcp TCPConnectSimulator
 }
 
 // NewPortScan creates port scan simulator.
@@ -76,11 +77,17 @@ func (s *PortScan) Hosts(scope string, size int) ([]string, error) {
 			}
 			dedup[key] = true
 
-			for _, port := range scanPorts {
-				hosts = append(hosts, fmt.Sprintf("%s:%d", ip, port))
-			}
+			hosts = append(hosts, ip.String())
 		}
 	}
 
 	return hosts, nil
+}
+
+func (s *PortScan) Simulate(ctx context.Context, bind net.IP, dst string) error {
+	for _, port := range scanPorts {
+		s.tcp.Simulate(ctx, bind, fmt.Sprintf("%s:%d", dst, port))
+	}
+
+	return nil
 }

@@ -137,7 +137,6 @@ type Module struct {
 	Pipeline   Pipeline
 	NumOfHosts int
 	HeaderMsg  string
-	HidePort   bool
 	HostMsg    string
 	Timeout    time.Duration
 	FailMsg    string
@@ -145,7 +144,7 @@ type Module struct {
 }
 
 func (m *Module) FormatHost(host string) string {
-	if m.HidePort || m.Pipeline == PipelineDNS {
+	if m.Pipeline == PipelineDNS {
 		h, _, _ := net.SplitHostPort(host)
 		if h != "" {
 			host = h
@@ -208,7 +207,6 @@ var allModules = []Module{
 		NumOfHosts: 10,
 		HeaderMsg:  "Preparing random sample of RFC 5737 destinations",
 		HostMsg:    "Port scanning %s",
-		HidePort:   true,
 		Timeout:    30 * time.Millisecond,
 	},
 	Module{
@@ -276,13 +274,8 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 			continue
 		}
 
-		var prevMsg string
 		for _, host := range hosts {
-			msg := sim.FormatHost(host)
-			if prevMsg != msg {
-				printMsg(sim, msg)
-			}
-			prevMsg = msg
+			printMsg(sim, sim.FormatHost(host))
 
 			if !dryRun {
 				ctx, cancel := context.WithTimeout(context.Background(), sim.Timeout)
