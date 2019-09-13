@@ -1,6 +1,7 @@
 package simulator
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math/rand"
@@ -74,6 +75,7 @@ func (s *PortScan) Hosts(scope string, size int) ([]string, error) {
 
 	for k := 0; k < 2*size && len(hosts) < size; k++ {
 		// random IP from one of the defined IP ranges
+		// TODO: skip IPs ending with zero?
 		ip := randIP(scanIPRanges[netIdx[len(hosts)%len(netIdx)]]).String()
 
 		if dedup[ip] {
@@ -84,7 +86,9 @@ func (s *PortScan) Hosts(scope string, size int) ([]string, error) {
 		hosts = append(hosts, ip)
 	}
 
-	sort.Strings(hosts)
+	sort.Slice(hosts, func(i, j int) bool {
+		return bytes.Compare(net.ParseIP(hosts[i]), net.ParseIP(hosts[j])) < 0
+	})
 	return hosts, nil
 }
 
