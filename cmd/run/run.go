@@ -214,7 +214,7 @@ var allModules = []Module{
 		Name:       "sink",
 		Pipeline:   PipelineDNS,
 		NumOfHosts: 5,
-		HeaderMsg:  "Preparing random sample of sinkhole IP:port pairs",
+		HeaderMsg:  "Preparing random sample of sinkhole domains",
 		Timeout:    1 * time.Second,
 	},
 	Module{
