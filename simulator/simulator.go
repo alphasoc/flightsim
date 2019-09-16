@@ -37,6 +37,11 @@ func (TCPConnectSimulator) Simulate(ctx context.Context, bind net.IP, dst string
 
 	conn, err := d.DialContext(ctx, "tcp", dst)
 	if err != nil {
+		if err, ok := err.(net.Error); ok {
+			if err.Timeout() {
+				return nil
+			}
+		}
 		return err
 	}
 	conn.Close()
@@ -61,5 +66,12 @@ func (DNSResolveSimulator) Simulate(ctx context.Context, bind net.IP, dst string
 		Dial: d.DialContext,
 	}
 	_, err := r.LookupHost(ctx, host)
+
+	if err, ok := err.(*net.DNSError); ok {
+		if err.IsNotFound || err.IsTimeout {
+			return nil
+		}
+	}
+
 	return err
 }

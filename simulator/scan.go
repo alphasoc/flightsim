@@ -94,7 +94,10 @@ func (s *PortScan) Hosts(scope string, size int) ([]string, error) {
 
 func (s *PortScan) Simulate(ctx context.Context, bind net.IP, dst string) error {
 	for _, port := range scanPorts {
-		s.tcp.Simulate(ctx, bind, fmt.Sprintf("%s:%d", dst, port))
+		err := s.tcp.Simulate(ctx, bind, fmt.Sprintf("%s:%d", dst, port))
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

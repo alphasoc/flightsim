@@ -29,6 +29,7 @@ func (*Tunnel) Simulate(ctx context.Context, extIP net.IP, host string) error {
 	for i := 0; i < 40; i++ {
 		label := strings.ToLower(utils.RandString(30))
 		_, _ = r.LookupTXT(ctx, fmt.Sprintf("%s.%s", label, host))
+		// TODO: make sure we get response
 	}
 
 	return nil
