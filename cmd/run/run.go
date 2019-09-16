@@ -238,8 +238,9 @@ var allModules = []Module{
 		Name:       "tunnel",
 		Pipeline:   PipelineDNS,
 		NumOfHosts: 25,
-		HeaderMsg:  "Preparing DNS tunnel hostnames",
-		Timeout:    1 * time.Second,
+		// HeaderMsg:  "Preparing DNS tunnel hostnames",
+		HostMsg: "Simulating DNS tunneling via *.%s",
+		Timeout: 1 * time.Second,
 	},
 }
 

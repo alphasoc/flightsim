@@ -2,6 +2,7 @@ package simulator
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"strings"
 
@@ -25,18 +26,15 @@ func (*Tunnel) Simulate(ctx context.Context, extIP net.IP, host string) error {
 		Dial: d.DialContext,
 	}
 
-	_, err := r.LookupTXT(ctx, host)
-	return err
+	for i := 0; i < 40; i++ {
+		label := strings.ToLower(utils.RandString(30))
+		_, _ = r.LookupTXT(ctx, fmt.Sprintf("%s.%s", label, host))
+	}
+
+	return nil
 }
 
 // Hosts returns random generated hosts to alphasoc sandbox.
 func (t *Tunnel) Hosts(scope string, size int) ([]string, error) {
-	var hosts []string
-
-	for i := 0; i < size; i++ {
-		label := strings.ToLower(utils.RandString(30))
-		hosts = append(hosts, label+".sandbox.alphasoc.xyz")
-	}
-
-	return hosts, nil
+	return []string{"sandbox.alphasoc.xyz"}, nil
 }
