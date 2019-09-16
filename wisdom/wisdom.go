@@ -5,13 +5,21 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/pkg/errors"
+)
+
+const (
+	// HostTypeDNS will fetch DNS names (FQDNs) only
+	HostTypeDNS = "dns"
+
+	// HostTypeIP will fetch IPs with TCP protocol and non-zero port number
+	HostTypeIP = "ip"
 )
 
 type WisdomHosts struct {
@@ -36,7 +44,7 @@ func (h *WisdomHosts) Hosts(scope string, size int) ([]string, error) {
 	q := reqURL.Query()
 	q.Set("category", h.category)
 	q.Set("type", h.hostType)
-	q.Set("limit", strconv.Itoa(size))
+	q.Set("limit", "1000") // the actual limit is much lower, but we want everything
 	if scope != "" {
 		q.Set("family", scope)
 	}
@@ -75,19 +83,29 @@ func (h *WisdomHosts) Hosts(scope string, size int) ([]string, error) {
 		return nil, errors.Wrapf(err, "api.open.wisdom.alphasoc.net parse body error")
 	}
 
+	// pick up random hosts
 	var hosts []string
-	for _, it := range parsed.Items {
-		h := it.Domain
-		if h == "" {
-			h = it.IP
+	for _, i := range rand.Perm(len(parsed.Items)) {
+		if len(hosts) >= size {
+			break
 		}
-		if h == "" {
-			continue
+
+		it := parsed.Items[i]
+
+		var host string
+		switch h.hostType {
+		case HostTypeDNS:
+			host = it.Domain
+		case HostTypeIP:
+			if it.Port <= 0 || it.Protocol != "tcp" {
+				continue
+			}
+			host = net.JoinHostPort(it.IP, strconv.Itoa(it.Port))
 		}
-		if it.Port > 0 && strings.EqualFold(it.Protocol, "tcp") {
-			h = net.JoinHostPort(h, strconv.Itoa(it.Port))
+
+		if host != "" {
+			hosts = append(hosts, host)
 		}
-		hosts = append(hosts, h)
 	}
 
 	return hosts, nil

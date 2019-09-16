@@ -166,7 +166,7 @@ func (m *Module) FormatHost(host string) string {
 
 var allModules = []Module{
 	Module{
-		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("c2", "dns"), new(simulator.DNSResolveSimulator)),
+		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("c2", wisdom.HostTypeDNS), new(simulator.DNSResolveSimulator)),
 		Name:       "c2",
 		Pipeline:   PipelineDNS,
 		NumOfHosts: 5,
@@ -174,7 +174,7 @@ var allModules = []Module{
 		Timeout:    1 * time.Second,
 	},
 	Module{
-		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("c2", "ip"), new(simulator.TCPConnectSimulator)),
+		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("c2", wisdom.HostTypeIP), new(simulator.TCPConnectSimulator)),
 		Name:       "c2",
 		Pipeline:   PipelineIP,
 		NumOfHosts: 5,
@@ -210,7 +210,7 @@ var allModules = []Module{
 		Timeout:    30 * time.Millisecond,
 	},
 	Module{
-		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("sinkholed", "dns"), new(simulator.DNSResolveSimulator)),
+		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("sinkholed", wisdom.HostTypeDNS), new(simulator.DNSResolveSimulator)),
 		Name:       "sink",
 		Pipeline:   PipelineDNS,
 		NumOfHosts: 5,
@@ -218,7 +218,7 @@ var allModules = []Module{
 		Timeout:    1 * time.Second,
 	},
 	Module{
-		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("sinkholed", "ip"), new(simulator.TCPConnectSimulator)),
+		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("sinkholed", wisdom.HostTypeIP), new(simulator.TCPConnectSimulator)),
 		Name:       "sink",
 		Pipeline:   PipelineIP,
 		NumOfHosts: 5,

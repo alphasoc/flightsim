@@ -2,11 +2,12 @@ package wisdom
 
 import (
 	"net"
+	"strings"
 	"testing"
 )
 
 func TestWisdomHosts_hosts(t *testing.T) {
-	w := NewWisdomHosts("c2", "dns")
+	w := NewWisdomHosts("c2", HostTypeDNS)
 	size := 5
 	h, err := w.Hosts("", size)
 	if err != nil {
@@ -15,10 +16,16 @@ func TestWisdomHosts_hosts(t *testing.T) {
 	if len(h) != size {
 		t.Errorf("expected %d hosts, got %d", size, len(h))
 	}
+
+	for n := range h {
+		if strings.Contains(h[n], ":") {
+			t.Error("FQDN contains colon (has port?): ", h)
+		}
+	}
 }
 
 func TestWisdomHosts_ipWithFamily(t *testing.T) {
-	w := NewWisdomHosts("c2", "ip")
+	w := NewWisdomHosts("c2", HostTypeIPPort)
 	hosts, err := w.Hosts("trickbot", 1)
 	if err != nil {
 		t.Fatal(err)
