@@ -63,7 +63,8 @@ func (DNSResolveSimulator) Simulate(ctx context.Context, bind net.IP, dst string
 		d.LocalAddr = &net.UDPAddr{IP: bind}
 	}
 	r := &net.Resolver{
-		Dial: d.DialContext,
+		PreferGo: true,
+		Dial:     d.DialContext,
 	}
 	_, err := r.LookupHost(ctx, host)
 

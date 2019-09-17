@@ -23,7 +23,8 @@ func (*Tunnel) Simulate(ctx context.Context, extIP net.IP, host string) error {
 		LocalAddr: &net.UDPAddr{IP: extIP},
 	}
 	r := &net.Resolver{
-		Dial: d.DialContext,
+		PreferGo: true,
+		Dial:     d.DialContext,
 	}
 
 	for i := 0; i < 40; i++ {

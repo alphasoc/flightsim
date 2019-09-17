@@ -21,6 +21,7 @@ func (*Hijack) Simulate(ctx context.Context, extIP net.IP, host string) error {
 		LocalAddr: &net.UDPAddr{IP: extIP},
 	}
 	r := &net.Resolver{
+		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
 			return d.DialContext(ctx, "udp", "ns1.sandbox.alphasoc.xyz:53")
 		},
