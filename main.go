@@ -21,14 +21,14 @@ Usage:
     flightsim <command> [arguments]
 
 Available commands:
-    run         Run simulators
-    help        Help about specific simulators
+    run         Run all modules, or a particular module
+    help        Help about a specific module
     version     Prints the version number
 
 Cheatsheet:
-    flightsim run                Run all the simulators
-    flightsim run c2             Simulate a random C2 traffic
-    flightsim run c2:trickbot    Simulate a TrickBot traffic
+    flightsim run                Run all the modules
+    flightsim run c2             Simulate C2 traffic
+    flightsim run c2:trickbot    Simulate C2 traffic for the TrickBot family
 `
 
 func main() {
