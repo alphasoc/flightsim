@@ -281,7 +281,9 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 			if !dryRun {
 				ctx, cancel := context.WithTimeout(context.Background(), sim.Timeout)
 				if err := sim.Module.Simulate(ctx, extIP, host); err != nil {
-					printMsg(sim, sim.FailMsg)
+					// TODO: some module can return custom messages (e.g. hijack)
+					// and "ERROR" prefix shouldn't be printed then
+					printMsg(sim, "ERROR: "+err.Error())
 				} else {
 					printMsg(sim, sim.SuccessMsg)
 				}
