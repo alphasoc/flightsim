@@ -3,6 +3,7 @@ package simulator
 import (
 	"context"
 	"net"
+	"strings"
 )
 
 type Simulator interface {
@@ -38,7 +39,8 @@ func (TCPConnectSimulator) Simulate(ctx context.Context, bind net.IP, dst string
 	conn, err := d.DialContext(ctx, "tcp", dst)
 	if err != nil {
 		if err, ok := err.(net.Error); ok {
-			if err.Timeout() {
+			// TODO: find a better way of determining refused connection?
+			if err.Timeout() || strings.HasSuffix(err.Error(), "connect: connection refused") {
 				return nil
 			}
 		}
