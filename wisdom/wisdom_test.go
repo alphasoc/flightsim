@@ -25,7 +25,7 @@ func TestWisdomHosts_hosts(t *testing.T) {
 }
 
 func TestWisdomHosts_ipWithFamily(t *testing.T) {
-	w := NewWisdomHosts("c2", HostTypeIPPort)
+	w := NewWisdomHosts("c2", HostTypeIP)
 	hosts, err := w.Hosts("trickbot", 1)
 	if err != nil {
 		t.Fatal(err)
