@@ -20,33 +20,33 @@ jobs:
             - flightsim-windows-amd64.exe
             - flightsim-linux-amd64
             - flightsim-darwin-amd64
-  lint:
-    docker:
-      - image: circleci/golang:1.13
-    working_directory: /go/src/github.com/alphasoc/flightsim
-    steps:
-      - checkout
-      - restore_cache:
-          key: gometalinter-tools-{{ checksum "/go/bin/gometalinter" }}
-      - run: go get github.com/alecthomas/gometalinter
-      - run: gometalinter --install
-      - save_cache:
-          key: gometalinter-tools-{{ checksum "/go/bin/gometalinter" }}
-          paths:
-            - /go/bin/
-      - run: go install ./...
-      - run:
-          name: run linters
-          command:  |
-            gometalinter        \
-            --vendor            \
-            --disable-all       \
-            --enable=gofmt      \
-            --enable=golint     \
-            --enable=goimports  \
-            --enable=vetshadow  \
-            --enable=misspell   \
-            --enable=vet ./...
+  # lint:
+  #   docker:
+  #     - image: circleci/golang:1.13
+  #   working_directory: /go/src/github.com/alphasoc/flightsim
+  #   steps:
+  #     - checkout
+  #     - restore_cache:
+  #         key: gometalinter-tools-{{ checksum "/go/bin/gometalinter" }}
+  #     - run: go get github.com/alecthomas/gometalinter
+  #     - run: gometalinter --install
+  #     - save_cache:
+  #         key: gometalinter-tools-{{ checksum "/go/bin/gometalinter" }}
+  #         paths:
+  #           - /go/bin/
+  #     - run: go install ./...
+  #     - run:
+  #         name: run linters
+  #         command:  |
+  #           gometalinter        \
+  #           --vendor            \
+  #           --disable-all       \
+  #           --enable=gofmt      \
+  #           --enable=golint     \
+  #           --enable=goimports  \
+  #           --enable=vetshadow  \
+  #           --enable=misspell   \
+  #           --enable=vet ./...
 
   publish:
     docker:
@@ -72,15 +72,15 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+[.].*$/
-      - lint:
-          filters:
-            tags:
-              only: /^v[0-9]+[.].*$/
+      # - lint:
+      #     filters:
+      #       tags:
+      #         only: /^v[0-9]+[.].*$/
       - publish:
           context: github-alphasoc-deploy
           requires:
             - build
-            - lint
+            # - lint
           filters:
             tags:
               only: /^v[0-9]+[.].*$/
