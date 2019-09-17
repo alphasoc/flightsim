@@ -240,7 +240,7 @@ var allModules = []Module{
 		NumOfHosts: 25,
 		// HeaderMsg:  "Preparing DNS tunnel hostnames",
 		HostMsg: "Simulating DNS tunneling via *.%s",
-		Timeout: 1 * time.Second,
+		Timeout: 10 * time.Second,
 	},
 }
 

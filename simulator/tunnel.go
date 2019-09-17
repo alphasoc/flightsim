@@ -3,8 +3,10 @@ package simulator
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/alphasoc/flightsim/utils"
 )
@@ -27,10 +29,35 @@ func (*Tunnel) Simulate(ctx context.Context, extIP net.IP, host string) error {
 		Dial:     d.DialContext,
 	}
 
-	for i := 0; i < 40; i++ {
+	for {
+		// keep going until the passed context expires
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+
 		label := strings.ToLower(utils.RandString(30))
-		_, _ = r.LookupTXT(ctx, fmt.Sprintf("%s.%s", label, host))
-		// TODO: make sure we get response
+
+		ctx, _ := context.WithTimeout(ctx, 200*time.Millisecond)
+		_, err := r.LookupTXT(ctx, fmt.Sprintf("%s.%s", label, host))
+
+		if err != nil {
+			// ignore timeouts and NotFound;
+			// TODO: actually make sure we get a valid response
+			switch e := err.(type) {
+			case *net.DNSError:
+				if !(e.IsNotFound || e.IsTimeout) {
+					return err
+				}
+			default:
+				return err
+			}
+		}
+		log.Println(label, err)
+
+		// wait until context expires so we don't flood
+		<-ctx.Done()
 	}
 
 	return nil
