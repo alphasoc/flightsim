@@ -3,7 +3,6 @@ package simulator
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 	"time"
@@ -54,7 +53,6 @@ func (*Tunnel) Simulate(ctx context.Context, extIP net.IP, host string) error {
 				return err
 			}
 		}
-		log.Println(label, err)
 
 		// wait until context expires so we don't flood
 		<-ctx.Done()
