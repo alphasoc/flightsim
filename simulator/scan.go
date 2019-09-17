@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net"
 	"sort"
+	"time"
 )
 
 var (
@@ -93,11 +94,20 @@ func (s *PortScan) Hosts(scope string, size int) ([]string, error) {
 }
 
 func (s *PortScan) Simulate(ctx context.Context, bind net.IP, dst string) error {
+	callTimeout := 200 * time.Millisecond
+	// If deadline set, divide the global timeout across every call (port)
+	if d, ok := ctx.Deadline(); ok {
+		callTimeout = d.Sub(time.Now()) / time.Duration(len(scanPorts))
+	}
+
 	for _, port := range scanPorts {
+		ctx, _ := context.WithTimeout(ctx, callTimeout)
 		err := s.tcp.Simulate(ctx, bind, fmt.Sprintf("%s:%d", dst, port))
 		if err != nil {
 			return err
 		}
+		// wait until context done
+		<-ctx.Done()
 	}
 
 	return nil
