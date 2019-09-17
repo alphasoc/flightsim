@@ -24,12 +24,17 @@ teams to evaluate security controls (e.g. firewalls) and ensure that monitoring 
 are able to detect malicious traffic.
 
 Usage:
-  flightsim [command]
+  flightsim <command> [arguments]
 
 Available Commands:
-  help        Help about any command
-  run         Run all simulators (default) or a particular test
-  version     Print version and exit
+  run         Run all modules, or a particular module
+  help        Help about a specific module
+  version     Prints the version number
+
+Cheatsheet:
+  flightsim run                Run all the modules
+  flightsim run c2             Simulate C2 traffic
+  flightsim run c2:trickbot    Simulate C2 traffic for the TrickBot family
 
 Flags:
   -h, --help   help for flightsim
@@ -37,16 +42,16 @@ Flags:
 Use "flightsim [command] --help" for more information about a command
 ```
 
-The utility runs individual modules to generate malicious traffic. To perform all available tests, simply use `flightsim run` which will generate traffic using the first available non-loopback network interface. **NB:** when running the C2 modules, flightsim will gather current C2 addresses from the [Cybercrime Tracker](http://cybercrime-tracker.net) and AlphaSOC API, so requires egress Internet access.
+The utility runs individual modules to generate malicious traffic. To perform all available tests, simply use `flightsim run` which will generate traffic using the first available non-loopback network interface. **Note:** when running many modules, flightsim will gather destination addresses from the AlphaSOC API, so requires egress Internet access.
 
 To list the available modules, use `flightsim run --help`. To execute a particular test, use `flightsim run <module>`, as below.
 
 ```
 $ flightsim run --help
-Run all simulators (default) or a particular test
+Run all the modules (default) or a particular test
 
 Usage:
-  flightsim run [c2-dns|c2-ip|dga|hijack|scan|sink|spambot|tunnel] [flags]
+  flightsim run [c2|dga|hijack|scan|sink|spambot|tunnel] [flags]
 
 Flags:
   -n,                      number of hosts generated for each simulator (default 10)
@@ -90,8 +95,7 @@ The modules packaged with the utility are listed in the table below.
 
 | Module    | Description                                                                   |
 | --------- | ----------------------------------------------------------------------------- |
-| `c2-dns`  | Generates a list of current C2 destinations and performs DNS requests to each |
-| `c2-ip`   | Connects to random current C2 IP:port pairs to simulate egress sessions       |
+| `c2`      | Generates a list of C2 destinations and generates DNS and IP traffic to each  |
 | `dga`     | Simulates DGA traffic using random labels and top-level domains               |
 | `hijack`  | Tests for DNS hijacking support via ns1.sandbox.alphasoc.xyz                  |
 | `scan`    | Performs a port scan to random RFC 5737 addresses using common ports          |
