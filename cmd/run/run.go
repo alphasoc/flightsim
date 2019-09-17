@@ -139,7 +139,7 @@ type Module struct {
 	HeaderMsg  string
 	HostMsg    string
 	Timeout    time.Duration
-	FailMsg    string
+	// FailMsg    string
 	SuccessMsg string
 }
 
@@ -189,17 +189,17 @@ var allModules = []Module{
 		HeaderMsg:  "Generating list of DGA domains",
 		Timeout:    1 * time.Second,
 	},
-	Module{
-		Module:     simulator.NewHijack(),
-		Name:       "hijack",
-		Pipeline:   PipelineDNS,
-		NumOfHosts: 1,
-		HeaderMsg:  "",
-		HostMsg:    "Resolving %s via ns1.sandbox.alphasoc.xyz",
-		Timeout:    1 * time.Second,
-		FailMsg:    "Test failed (queries to arbitrary DNS servers are blocked)",
-		SuccessMsg: "Success! DNS hijacking is possible in this environment",
-	},
+	// Module{
+	// 	Module:     simulator.NewHijack(),
+	// 	Name:       "hijack",
+	// 	Pipeline:   PipelineDNS,
+	// 	NumOfHosts: 1,
+	// 	HeaderMsg:  "",
+	// 	HostMsg:    "Resolving %s via ns1.sandbox.alphasoc.xyz",
+	// 	Timeout:    1 * time.Second,
+	// 	// FailMsg:    "Test failed (queries to arbitrary DNS servers are blocked)",
+	// 	SuccessMsg: "Success! DNS hijacking is possible in this environment",
+	// },
 	Module{
 		Module:     simulator.NewPortScan(),
 		Name:       "scan",
