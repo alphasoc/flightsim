@@ -86,11 +86,11 @@ func RunCmd(args []string) error {
 		return err
 	}
 
-	if fast {
-		for i := range sims {
-			sims[i].Timeout = 100 * time.Millisecond
-		}
-	}
+	// if fast {
+	// 	for i := range sims {
+	// 		sims[i].Timeout = 100 * time.Millisecond
+	// 	}
+	// }
 
 	return run(sims, extIP, *size)
 }
