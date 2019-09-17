@@ -39,7 +39,7 @@ var allModuleNames []string = func() []string {
 
 var usage = `usage: flightsim run [flags] [modules]
 
-To run all available simulators, call:
+To run all available modules, call:
 
     flightsim run
 
@@ -170,7 +170,7 @@ var allModules = []Module{
 		Name:       "c2",
 		Pipeline:   PipelineDNS,
 		NumOfHosts: 5,
-		HeaderMsg:  "Preparing random sample of C2 domains",
+		HeaderMsg:  "Preparing a random sample of C2 domains",
 		Timeout:    1 * time.Second,
 	},
 	Module{
@@ -178,7 +178,7 @@ var allModules = []Module{
 		Name:       "c2",
 		Pipeline:   PipelineIP,
 		NumOfHosts: 5,
-		HeaderMsg:  "Preparing random sample of C2 IP:port pairs",
+		HeaderMsg:  "Preparing a random sample of C2 IP:port pairs",
 		Timeout:    1 * time.Second,
 	},
 	Module{
@@ -186,7 +186,7 @@ var allModules = []Module{
 		Name:       "dga",
 		Pipeline:   PipelineDNS,
 		NumOfHosts: 15,
-		HeaderMsg:  "Generating list of DGA domains",
+		HeaderMsg:  "Generating a list of DGA domains",
 		Timeout:    1 * time.Second,
 	},
 	// Module{
@@ -205,7 +205,7 @@ var allModules = []Module{
 		Name:       "scan",
 		Pipeline:   PipelineIP,
 		NumOfHosts: 10,
-		HeaderMsg:  "Preparing random sample of RFC 5737 destinations",
+		HeaderMsg:  "Preparing a random sample of RFC 5737 destinations",
 		HostMsg:    "Port scanning %s",
 		Timeout:    5 * time.Second,
 	},
@@ -214,7 +214,7 @@ var allModules = []Module{
 		Name:       "sink",
 		Pipeline:   PipelineDNS,
 		NumOfHosts: 5,
-		HeaderMsg:  "Preparing random sample of sinkholed domains",
+		HeaderMsg:  "Preparing a random sample of sinkholed domains",
 		Timeout:    1 * time.Second,
 	},
 	Module{
@@ -222,7 +222,7 @@ var allModules = []Module{
 		Name:       "sink",
 		Pipeline:   PipelineIP,
 		NumOfHosts: 5,
-		HeaderMsg:  "Preparing random sample of sinkholed IP:port pairs",
+		HeaderMsg:  "Preparing a random sample of sinkholed IP:port pairs",
 		Timeout:    1 * time.Second,
 	},
 	Module{
@@ -230,7 +230,7 @@ var allModules = []Module{
 		Name:       "spambot",
 		Pipeline:   PipelineIP,
 		NumOfHosts: 10,
-		HeaderMsg:  "Preparing random sample of Internet mail servers",
+		HeaderMsg:  "Preparing a random sample of Internet mail servers",
 		Timeout:    1 * time.Second,
 	},
 	Module{
