@@ -1,9 +1,11 @@
 package simulator
 
 import (
+	"context"
 	"math/rand"
 	"net"
 	"strings"
+	"time"
 )
 
 //List of domain from https://github.com/mailcheck/mailcheck/wiki/List-of-Popular-Domains
@@ -72,14 +74,21 @@ func (s *Spambot) Hosts(scope string, size int) ([]string, error) {
 		idx   = rand.Perm(len(domains))
 	)
 
-	for i, n := 0, 0; i < size && n < len(domains); i, n = i+1, n+1 {
-		mx, err := net.LookupMX(domains[idx[n]])
-		if err != nil || len(mx) == 0 {
-			i--
-			continue
+	rv := &net.Resolver{PreferGo: true}
+	seen := make(map[string]bool)
+
+	for n := 0; len(hosts) < size && n < len(idx); n++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+		mx, _ := rv.LookupMX(ctx, domains[idx[n]])
+		cancel()
+		if len(mx) > 0 {
+			host := strings.TrimSuffix(mx[0].Host, ".")
+			if !seen[host] {
+				hosts = append(hosts, net.JoinHostPort(host, "25"))
+				seen[host] = true
+			}
 		}
-		host := strings.TrimSuffix(mx[0].Host, ".")
-		hosts = append(hosts, net.JoinHostPort(host, "25"))
 	}
+
 	return hosts, nil
 }
