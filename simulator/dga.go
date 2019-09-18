@@ -7,7 +7,7 @@ import (
 	"github.com/alphasoc/flightsim/utils"
 )
 
-var tlds = []string{".com", ".net", ".biz", ".top", ".info", ".xyz", ".space"}
+var dgaTLDs = []string{".com", ".net", ".biz", ".top", ".info", ".xyz", ".space"}
 
 // DGA simulator.
 type DGA struct {
@@ -23,9 +23,16 @@ func NewDGA() *DGA {
 func (t *DGA) Hosts(scope string, size int) ([]string, error) {
 	var hosts []string
 
+	// choose three random TLDs
+	tldIdx := rand.Perm(len(dgaTLDs))[:3]
+
+	// decide on hostname length (7-10)
+	labelLen := 7 + rand.Intn(4)
+
 	for i := 0; i < size; i++ {
-		label := strings.ToLower(utils.RandString(7))
-		hosts = append(hosts, label+tlds[rand.Intn(len(tlds))])
+		label := strings.ToLower(utils.RandString(labelLen))
+		tld := dgaTLDs[tldIdx[rand.Intn(len(tldIdx))]]
+		hosts = append(hosts, label+tld)
 	}
 
 	return hosts, nil
