@@ -15,9 +15,8 @@ import (
 )
 
 var (
-	fast      bool
-	ifaceName string
-	dryRun    bool
+	fast   bool
+	dryRun bool
 )
 
 var allModuleNames []string = func() []string {
@@ -58,7 +57,7 @@ func RunCmd(args []string) error {
 	cmdLine := flag.NewFlagSet("run", flag.ExitOnError)
 	cmdLine.BoolVar(&fast, "fast", false, "reduce sleep intervals between simulation events")
 	cmdLine.BoolVar(&dryRun, "dry", false, "print actions without performing any network activity")
-	cmdLine.StringVar(&ifaceName, "iface", "", "network interface to use")
+	ifaceName := cmdLine.String("iface", "", "network interface or local IP address to use")
 	size := cmdLine.Int("size", 0, "number of hosts generated for each simulator")
 
 	cmdLine.Usage = func() {
@@ -76,7 +75,7 @@ func RunCmd(args []string) error {
 		*size = 0
 	}
 
-	extIP, err := utils.ExternalIP(ifaceName)
+	extIP, err := utils.ExternalIP(*ifaceName)
 	if err != nil {
 		return err
 	}
