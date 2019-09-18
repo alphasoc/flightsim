@@ -260,7 +260,7 @@ func (s *Simulation) Name() string {
 func run(sims []*Simulation, extIP net.IP, size int) error {
 	printWelcome(extIP.String())
 	printHeader()
-	for _, sim := range sims {
+	for simN, sim := range sims {
 		printMsg(sim, sim.HeaderMsg)
 
 		numOfHosts := size
@@ -273,7 +273,7 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 			continue
 		}
 
-		for _, host := range hosts {
+		for hostN, host := range hosts {
 			printMsg(sim, sim.FormatHost(host))
 
 			if !dryRun {
@@ -286,9 +286,11 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 					printMsg(sim, sim.SuccessMsg)
 				}
 
-				if !fast {
+				// wait until context expires (unless fast mode or very last iteration)
+				if !fast && ((simN < len(sims)-1) || (hostN < len(hosts)-1)) {
 					<-ctx.Done()
 				}
+
 				cancel()
 			}
 		}
