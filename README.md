@@ -28,7 +28,6 @@ Usage:
 
 Available Commands:
   run         Run all modules, or a particular module
-  help        Help about a specific module
   version     Prints the version number
 
 Cheatsheet:
@@ -63,7 +62,7 @@ Available flags:
   -fast
     	reduce sleep intervals between simulation events
   -iface string
-    	network interface to use
+    	network interface or local IP address to use
   -size int
     	number of hosts generated for each simulator
 
