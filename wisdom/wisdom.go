@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -54,7 +55,17 @@ func (h *WisdomHosts) Hosts(scope string, size int) ([]string, error) {
 		reqURL.Query().Set("family", h.Family)
 	}
 
-	resp, err := http.Get(reqURL.String())
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	var resp *http.Response
+	for n := 0; n < 3; n++ {
+		resp, err = client.Get(reqURL.String())
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
