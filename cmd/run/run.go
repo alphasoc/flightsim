@@ -207,7 +207,7 @@ var allModules = []Module{
 		NumOfHosts: 10,
 		HeaderMsg:  "Preparing a random sample of RFC 5737 destinations",
 		HostMsg:    "Port scanning %s",
-		Timeout:    5 * time.Second,
+		Timeout:    3 * time.Second,
 	},
 	Module{
 		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("sinkholed", wisdom.HostTypeDNS), new(simulator.DNSResolveSimulator)),

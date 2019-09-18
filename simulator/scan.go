@@ -99,6 +99,7 @@ func (s *PortScan) Simulate(ctx context.Context, bind net.IP, dst string) error 
 	if d, ok := ctx.Deadline(); ok {
 		callTimeout = d.Sub(time.Now()) / time.Duration(len(scanPorts))
 	}
+	// TODO: allow for multiple connection in parallel and hence a longer deadline
 
 	for _, port := range scanPorts {
 		ctx, _ := context.WithTimeout(ctx, callTimeout)
