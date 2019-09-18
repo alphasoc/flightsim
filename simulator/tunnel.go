@@ -43,17 +43,9 @@ func (*Tunnel) Simulate(ctx context.Context, extIP net.IP, host string) error {
 		ctx, _ := context.WithTimeout(ctx, 200*time.Millisecond)
 		_, err := r.LookupTXT(ctx, fmt.Sprintf("%s.%s", label, host))
 
-		if err != nil {
-			// ignore timeouts and NotFound;
-			// TODO: actually make sure we get a valid response
-			switch e := err.(type) {
-			case *net.DNSError:
-				if !(e.IsNotFound || e.IsTimeout) {
-					return err
-				}
-			default:
-				return err
-			}
+		// ignore timeout and "no such host"
+		if err != nil && !isSoftError(err, "no such host") {
+			return err
 		}
 
 		// wait until context expires so we don't flood

@@ -39,18 +39,14 @@ func (TCPConnectSimulator) Simulate(ctx context.Context, bind net.IP, dst string
 	}
 
 	conn, err := d.DialContext(ctx, "tcp", dst)
-	if err != nil {
-		if err, ok := err.(net.Error); ok {
-			// TODO: find a better way of determining refused connection?
-			if err.Timeout() || strings.HasSuffix(err.Error(), "connect: connection refused") {
-				return nil
-			}
-		}
-		return err
+	if conn != nil {
+		conn.Close()
 	}
-	conn.Close()
 
-	return nil
+	if isSoftError(err, "connect: connection refused") {
+		return nil
+	}
+	return err
 }
 
 type DNSResolveSimulator struct {
@@ -72,11 +68,25 @@ func (DNSResolveSimulator) Simulate(ctx context.Context, bind net.IP, dst string
 	}
 	_, err := r.LookupHost(ctx, utils.FQDN(host))
 
-	if err, ok := err.(*net.DNSError); ok {
-		if err.IsNotFound || err.IsTimeout {
-			return nil
+	if isSoftError(err, "no such host") {
+		return nil
+	}
+	return err
+}
+
+func isSoftError(err error, ss ...string) bool {
+	netErr, ok := err.(net.Error)
+	if !ok {
+		return false
+	}
+	if netErr.Timeout() {
+		return true
+	}
+	errStr := err.Error()
+	for n := range ss {
+		if strings.Contains(errStr, ss[n]) {
+			return true
 		}
 	}
-
-	return err
+	return false
 }
