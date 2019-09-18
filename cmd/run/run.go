@@ -261,7 +261,6 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 	printWelcome(extIP.String())
 	printHeader()
 	for _, sim := range sims {
-		// printMsg(sim, "Starting")
 		printMsg(sim, sim.HeaderMsg)
 
 		numOfHosts := size
@@ -293,7 +292,6 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 				cancel()
 			}
 		}
-		// printMsg(sim, "Finished")
 	}
 
 	printGoodbye()
