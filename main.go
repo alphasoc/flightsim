@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -22,7 +21,6 @@ Usage:
 
 Available commands:
     run         Run all modules, or a particular module
-    help        Help about a specific module
     version     Prints the version number
 
 Cheatsheet:
@@ -52,8 +50,6 @@ func main() {
 	case "run":
 		run.Version = Version
 		err = run.RunCmd(args)
-	case "help":
-		err = errors.New("TODO")
 	case "version":
 		fmt.Printf("flightsim version %s\n", Version)
 		return
