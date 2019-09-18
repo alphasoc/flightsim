@@ -6,6 +6,8 @@ import (
 	"net"
 	"strings"
 	"time"
+
+	"github.com/alphasoc/flightsim/utils"
 )
 
 //List of domain from https://github.com/mailcheck/mailcheck/wiki/List-of-Popular-Domains
@@ -79,7 +81,7 @@ func (s *Spambot) Hosts(scope string, size int) ([]string, error) {
 
 	for n := 0; len(hosts) < size && n < len(idx); n++ {
 		ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
-		mx, _ := rv.LookupMX(ctx, domains[idx[n]])
+		mx, _ := rv.LookupMX(ctx, utils.FQDN(domains[idx[n]]))
 		cancel()
 		if len(mx) > 0 {
 			host := strings.TrimSuffix(mx[0].Host, ".")

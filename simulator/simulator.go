@@ -4,6 +4,8 @@ import (
 	"context"
 	"net"
 	"strings"
+
+	"github.com/alphasoc/flightsim/utils"
 )
 
 type Simulator interface {
@@ -68,7 +70,7 @@ func (DNSResolveSimulator) Simulate(ctx context.Context, bind net.IP, dst string
 		PreferGo: true,
 		Dial:     d.DialContext,
 	}
-	_, err := r.LookupHost(ctx, host)
+	_, err := r.LookupHost(ctx, utils.FQDN(host))
 
 	if err, ok := err.(*net.DNSError); ok {
 		if err.IsNotFound || err.IsTimeout {

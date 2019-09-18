@@ -28,6 +28,8 @@ func (*Tunnel) Simulate(ctx context.Context, extIP net.IP, host string) error {
 		Dial:     d.DialContext,
 	}
 
+	host = utils.FQDN(host)
+
 	for {
 		// keep going until the passed context expires
 		select {

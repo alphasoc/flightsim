@@ -2,6 +2,7 @@ package utils
 
 import (
 	"net"
+	"strings"
 	"time"
 )
 
@@ -55,4 +56,8 @@ func getIPFromInterface(iface *net.Interface) (net.IP, error) {
 		return ip, nil
 	}
 	return nil, nil
+}
+
+func FQDN(h string) string {
+	return strings.TrimRight(h, ".") + "."
 }
