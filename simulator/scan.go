@@ -1,10 +1,13 @@
 package simulator
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math/rand"
 	"net"
+	"sort"
+	"time"
 )
 
 var (
@@ -50,6 +53,7 @@ func randIP(network *net.IPNet) net.IP {
 
 // PortScan simulator.
 type PortScan struct {
+	tcp TCPConnectSimulator
 }
 
 // NewPortScan creates port scan simulator.
@@ -57,45 +61,55 @@ func NewPortScan() *PortScan {
 	return &PortScan{}
 }
 
-// Simulate port scanning for given host.
-func (*PortScan) Simulate(ctx context.Context, extIP net.IP, host string) error {
-	d := &net.Dialer{
-		LocalAddr: &net.TCPAddr{IP: extIP},
-	}
-
-	conn, err := d.DialContext(ctx, "tcp", host)
-	if err != nil {
-		return err
-	}
-	conn.Close()
-
-	return nil
-}
-
 // Hosts returns host:port generated from RFC 5737 addresses.
-func (s *PortScan) Hosts(size int) ([]string, error) {
+func (s *PortScan) Hosts(scope string, size int) ([]string, error) {
 	var hosts []string
 
-	// for each network generate size IPs and add all ports;
-	// total number of hosts will be up to size * networks * ports
-	for _, network := range scanIPRanges {
-		// TODO: make caller responsible for deduplication
-		dedup := make(map[string]bool)
+	// TODO: make caller responsible for deduplication
+	dedup := make(map[string]bool)
 
-		for k := 0; k < size; k++ {
-			ip := randIP(network)
+	numOfNets := size/20 + 1
+	if numOfNets > len(scanIPRanges) {
+		numOfNets = len(scanIPRanges)
+	}
+	netIdx := rand.Perm(len(scanIPRanges))[:numOfNets]
 
-			key := ip.String()
-			if dedup[key] {
-				continue
-			}
-			dedup[key] = true
+	for k := 0; k < 2*size && len(hosts) < size; k++ {
+		// random IP from one of the defined IP ranges
+		// TODO: skip IPs ending with zero?
+		ip := randIP(scanIPRanges[netIdx[len(hosts)%len(netIdx)]]).String()
 
-			for _, port := range scanPorts {
-				hosts = append(hosts, fmt.Sprintf("%s:%d", ip, port))
-			}
+		if dedup[ip] {
+			continue
 		}
+		dedup[ip] = true
+
+		hosts = append(hosts, ip)
 	}
 
+	sort.Slice(hosts, func(i, j int) bool {
+		return bytes.Compare(net.ParseIP(hosts[i]), net.ParseIP(hosts[j])) < 0
+	})
 	return hosts, nil
+}
+
+func (s *PortScan) Simulate(ctx context.Context, bind net.IP, dst string) error {
+	callTimeout := 200 * time.Millisecond
+	// If deadline set, divide the global timeout across every call (port)
+	if d, ok := ctx.Deadline(); ok {
+		callTimeout = d.Sub(time.Now()) / time.Duration(len(scanPorts))
+	}
+	// TODO: allow for multiple connection in parallel and hence a longer deadline
+
+	for _, port := range scanPorts {
+		ctx, _ := context.WithTimeout(ctx, callTimeout)
+		err := s.tcp.Simulate(ctx, bind, fmt.Sprintf("%s:%d", dst, port))
+		if err != nil {
+			return err
+		}
+		// wait until context done
+		<-ctx.Done()
+	}
+
+	return nil
 }

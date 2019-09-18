@@ -2,8 +2,10 @@ package simulator
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/alphasoc/flightsim/utils"
 )
@@ -22,21 +24,38 @@ func (*Tunnel) Simulate(ctx context.Context, extIP net.IP, host string) error {
 		LocalAddr: &net.UDPAddr{IP: extIP},
 	}
 	r := &net.Resolver{
-		Dial: d.DialContext,
+		PreferGo: true,
+		Dial:     d.DialContext,
 	}
 
-	_, err := r.LookupTXT(ctx, host)
-	return err
+	host = utils.FQDN(host)
+
+	for {
+		// keep going until the passed context expires
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+
+		label := strings.ToLower(utils.RandString(30))
+
+		ctx, _ := context.WithTimeout(ctx, 200*time.Millisecond)
+		_, err := r.LookupTXT(ctx, fmt.Sprintf("%s.%s", label, host))
+
+		// ignore timeout and "no such host"
+		if err != nil && !isSoftError(err, "no such host") {
+			return err
+		}
+
+		// wait until context expires so we don't flood
+		<-ctx.Done()
+	}
+
+	return nil
 }
 
 // Hosts returns random generated hosts to alphasoc sandbox.
-func (t *Tunnel) Hosts(size int) ([]string, error) {
-	var hosts []string
-
-	for i := 0; i < size; i++ {
-		label := strings.ToLower(utils.RandString(30))
-		hosts = append(hosts, label+".sandbox.alphasoc.xyz")
-	}
-
-	return hosts, nil
+func (t *Tunnel) Hosts(scope string, size int) ([]string, error) {
+	return []string{"sandbox.alphasoc.xyz"}, nil
 }

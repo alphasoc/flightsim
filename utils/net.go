@@ -1,14 +1,21 @@
 package utils
 
 import (
-	"errors"
 	"net"
+	"strings"
+	"time"
 )
 
-// ExternalIP gets ip from given interface or
-// if interface is empty it finds first public ip.
+// ExternalIP gets ip from given interface.
+// If interface name is an IP then the passed IP is returned.
+// If interface is empty then a connection attempt if performed
+// to determine the default interface for external traffic.
 func ExternalIP(ifaceName string) (net.IP, error) {
 	if ifaceName != "" {
+		if ip := net.ParseIP(ifaceName); ip != nil {
+			return ip, nil
+		}
+
 		iface, err := net.InterfaceByName(ifaceName)
 		if err != nil {
 			return nil, err
@@ -16,25 +23,18 @@ func ExternalIP(ifaceName string) (net.IP, error) {
 		return getIPFromInterface(iface)
 	}
 
-	ifaces, err := net.Interfaces()
+	// Connect to internet destination and check the local address
+	c, err := net.DialTimeout("tcp", "api.open.wisdom.alphasoc.net:443", 5*time.Second)
 	if err != nil {
 		return nil, err
 	}
-	for _, iface := range ifaces {
-		if iface.Flags&net.FlagUp == 0 ||
-			iface.Flags&net.FlagLoopback != 0 {
-			continue
-		}
-		ip, err := getIPFromInterface(&iface)
-		if err != nil {
-			return nil, err
-		}
-		if ip != nil {
-			return ip, nil
-		}
+	defer c.Close()
 
+	h, _, err := net.SplitHostPort(c.LocalAddr().String())
+	if err != nil {
+		return nil, err
 	}
-	return nil, errors.New("local interfaces have no public ip")
+	return net.ParseIP(h), nil
 }
 
 func getIPFromInterface(iface *net.Interface) (net.IP, error) {
@@ -56,4 +56,8 @@ func getIPFromInterface(iface *net.Interface) (net.IP, error) {
 		return ip, nil
 	}
 	return nil, nil
+}
+
+func FQDN(h string) string {
+	return strings.TrimRight(h, ".") + "."
 }

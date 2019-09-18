@@ -5,6 +5,9 @@ import (
 	"math/rand"
 	"net"
 	"strings"
+	"time"
+
+	"github.com/alphasoc/flightsim/utils"
 )
 
 //List of domain from https://github.com/mailcheck/mailcheck/wiki/List-of-Popular-Domains
@@ -57,42 +60,37 @@ var domains = []string{
 }
 
 // Spambot simulator.
-type Spambot struct{}
+type Spambot struct {
+	TCPConnectSimulator
+}
 
 // NewSpambot creates a Spambot simulator.
 func NewSpambot() *Spambot {
 	return &Spambot{}
 }
 
-// Simulate connects to SMTP server provided in host.
-func (*Spambot) Simulate(ctx context.Context, extIP net.IP, host string) error {
-	d := &net.Dialer{
-		LocalAddr: &net.TCPAddr{IP: extIP},
-	}
-
-	conn, err := d.DialContext(ctx, "tcp", host)
-	if err != nil {
-		return err
-	}
-	conn.Close()
-	return nil
-}
-
 // Hosts returns random SMTP servers.
-func (s *Spambot) Hosts(size int) ([]string, error) {
+func (s *Spambot) Hosts(scope string, size int) ([]string, error) {
 	var (
 		hosts []string
 		idx   = rand.Perm(len(domains))
 	)
 
-	for i, n := 0, 0; i < size && n < len(domains); i, n = i+1, n+1 {
-		mx, err := net.LookupMX(domains[idx[n]])
-		if err != nil || len(mx) == 0 {
-			i--
-			continue
+	rv := &net.Resolver{PreferGo: true}
+	seen := make(map[string]bool)
+
+	for n := 0; len(hosts) < size && n < len(idx); n++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+		mx, _ := rv.LookupMX(ctx, utils.FQDN(domains[idx[n]]))
+		cancel()
+		if len(mx) > 0 {
+			host := strings.TrimSuffix(mx[0].Host, ".")
+			if !seen[host] {
+				hosts = append(hosts, net.JoinHostPort(host, "25"))
+				seen[host] = true
+			}
 		}
-		host := strings.TrimSuffix(mx[0].Host, ".")
-		hosts = append(hosts, net.JoinHostPort(host, "25"))
 	}
+
 	return hosts, nil
 }

@@ -1,9 +1,0 @@
-{
-    "Deadline": 60000000000,
-    "Exclude": [
-        "should have comment or be unexported"
-    ],
-    "Tests": true,
-    "Vendor": true,
-    "VendoredLinters": true
-}
