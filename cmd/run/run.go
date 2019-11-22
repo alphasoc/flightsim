@@ -243,7 +243,7 @@ var allModules = []Module{
 	},
 	Module{
 		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("cryptomining", wisdom.HostTypeIP), simulator.NewStratumMiner()),
-		Name:       "cryptomining",
+		Name:       "miner",
 		Pipeline:   PipelineIP,
 		NumOfHosts: 5,
 		HeaderMsg:  "Preparing a random sample of cryptomining IP:port pairs",
