@@ -241,6 +241,16 @@ var allModules = []Module{
 		HostMsg: "Simulating DNS tunneling via *.%s",
 		Timeout: 10 * time.Second,
 	},
+	Module{
+		Module:     simulator.NewTorSimulator(),
+		Name:       "tor",
+		Pipeline:   PipelineDNS,
+		NumOfHosts: 1,
+		HeaderMsg:  "Preparing Tor connection",
+		HostMsg:    "Connecting to %s",
+		SuccessMsg: "Success! Tor use is permitted in this environment",
+		Timeout:    20 * time.Second,
+	},
 }
 
 type Simulation struct {
