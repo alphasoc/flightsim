@@ -61,6 +61,13 @@ func NewPortScan() *PortScan {
 	return &PortScan{}
 }
 
+func (PortScan) Init() error {
+	return nil
+}
+
+func (PortScan) Cleanup() {
+}
+
 // Hosts returns host:port generated from RFC 5737 addresses.
 func (s *PortScan) Hosts(scope string, size int) ([]string, error) {
 	var hosts []string

@@ -19,6 +19,13 @@ func NewDGA() *DGA {
 	return &DGA{}
 }
 
+func (DGA) Init() error {
+	return nil
+}
+
+func (DGA) Cleanup() {
+}
+
 // Hosts returns random generated dga hosts.
 func (t *DGA) Hosts(scope string, size int) ([]string, error) {
 	var hosts []string

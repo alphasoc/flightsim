@@ -23,15 +23,23 @@ var torHosts = []string{"expyuzz4wqqyqhjn.onion", "qrmfuxwgyzk5jdjz.onion", "e4n
 }
 
 type TorSimulator struct {
-	tor     *tor.Tor
-	initerr error
+	tor *tor.Tor
 }
 
 //Returns new TorSimulator
 func NewTorSimulator() *TorSimulator {
+	return &TorSimulator{}
+}
+
+func (t *TorSimulator) Init() error {
 	tor, err := tor.Start(nil, &tor.StartConf{RetainTempDataDir: false})
 	tor.StopProcessOnClose = true
-	return &TorSimulator{tor: tor, initerr: err}
+	t.tor = tor
+	return err
+}
+
+func (t *TorSimulator) Cleanup() {
+	t.tor.Close()
 }
 
 //Returns random hosts from the slice limited by the parameter "size"
@@ -48,11 +56,6 @@ func (t TorSimulator) Hosts(scope string, size int) ([]string, error) {
 
 //Simulates connection to tor network
 func (t TorSimulator) Simulate(ctx context.Context, bind net.IP, dst string) error {
-	if t.initerr != nil {
-		panic(t.initerr)
-	}
-	//TODO close tor connection
-
 	dialer, err := t.tor.Dialer(ctx, nil)
 	if err != nil {
 		return err
@@ -61,6 +64,9 @@ func (t TorSimulator) Simulate(ctx context.Context, bind net.IP, dst string) err
 	httpClient := &http.Client{Transport: &http.Transport{DialContext: dialer.DialContext}}
 	resp, err := httpClient.Get("http://" + dst)
 	if err != nil {
+		if isSoftError(err) {
+			return nil
+		}
 		return err
 	}
 	defer resp.Body.Close()

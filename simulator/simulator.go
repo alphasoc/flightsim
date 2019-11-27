@@ -10,6 +10,8 @@ import (
 
 type Simulator interface {
 	Simulate(ctx context.Context, bind net.IP, host string) error
+	Init() error
+	Cleanup()
 }
 
 // TODO: pass context
@@ -32,6 +34,13 @@ func CreateModule(src HostSource, sim Simulator) Module {
 type TCPConnectSimulator struct {
 }
 
+func (TCPConnectSimulator) Init() error {
+	return nil
+}
+
+func (TCPConnectSimulator) Cleanup() {
+}
+
 func (TCPConnectSimulator) Simulate(ctx context.Context, bind net.IP, dst string) error {
 	d := &net.Dialer{}
 	if bind != nil {
@@ -50,6 +59,13 @@ func (TCPConnectSimulator) Simulate(ctx context.Context, bind net.IP, dst string
 }
 
 type DNSResolveSimulator struct {
+}
+
+func (DNSResolveSimulator) Init() error {
+	return nil
+}
+
+func (DNSResolveSimulator) Cleanup() {
 }
 
 func (DNSResolveSimulator) Simulate(ctx context.Context, bind net.IP, dst string) error {

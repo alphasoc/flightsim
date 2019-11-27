@@ -245,11 +245,11 @@ var allModules = []Module{
 		Module:     simulator.NewTorSimulator(),
 		Name:       "tor",
 		Pipeline:   PipelineDNS,
-		NumOfHosts: 1,
+		NumOfHosts: 5,
 		HeaderMsg:  "Preparing Tor connection",
 		HostMsg:    "Connecting to %s",
-		//SuccessMsg: "Success! Tor use is permitted in this environment",
-		Timeout: 10 * time.Second,
+		SuccessMsg: "Success! Tor use is permitted in this environment",
+		Timeout:    10 * time.Second,
 	},
 }
 
@@ -271,47 +271,55 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 	printWelcome(extIP.String())
 	printHeader()
 	for simN, sim := range sims {
-		printMsg(sim, sim.HeaderMsg)
-
-		numOfHosts := size
-		if numOfHosts == 0 {
-			numOfHosts = sim.Module.NumOfHosts
-		}
-		hosts, err := sim.Module.Hosts(sim.Scope, numOfHosts)
+		err := sim.Init()
 		if err != nil {
-			printMsg(sim, "failed: "+err.Error())
-			continue
-		}
+			printMsg(sim, "ERROR: "+fmt.Sprint(err))
+		} else {
+			printMsg(sim, sim.HeaderMsg)
 
-		func() {
-			defer func() {
-				if r := recover(); r != nil {
-					printMsg(sim, "ERROR: "+fmt.Sprint(r))
+			numOfHosts := size
+			if numOfHosts == 0 {
+				numOfHosts = sim.Module.NumOfHosts
+			}
+
+			hosts, err := sim.Module.Hosts(sim.Scope, numOfHosts)
+			if err != nil {
+				printMsg(sim, "failed: "+err.Error())
+				continue
+			}
+
+			func() {
+				defer func() {
+					if r := recover(); r != nil {
+						printMsg(sim, "ERROR: "+fmt.Sprint(r))
+					}
+				}()
+
+				for hostN, host := range hosts {
+					printMsg(sim, sim.FormatHost(host))
+
+					if !dryRun {
+						ctx, cancel := context.WithTimeout(context.Background(), sim.Timeout)
+						if err := sim.Module.Simulate(ctx, extIP, host); err != nil {
+							// TODO: some module can return custom messages (e.g. hijack)
+							// and "ERROR" prefix shouldn't be printed then
+							printMsg(sim, "ERROR: "+err.Error())
+						}
+
+						// wait until context expires (unless fast mode or very last iteration)
+						if !fast && ((simN < len(sims)-1) || (hostN < len(hosts)-1)) {
+							<-ctx.Done()
+						}
+
+						cancel()
+					}
 				}
 			}()
-
-			for hostN, host := range hosts {
-				printMsg(sim, sim.FormatHost(host))
-
-				if !dryRun {
-					ctx, cancel := context.WithTimeout(context.Background(), sim.Timeout)
-					if err := sim.Module.Simulate(ctx, extIP, host); err != nil {
-						// TODO: some module can return custom messages (e.g. hijack)
-						// and "ERROR" prefix shouldn't be printed then
-						printMsg(sim, "ERROR: "+err.Error())
-					} else {
-						printMsg(sim, sim.SuccessMsg)
-					}
-
-					// wait until context expires (unless fast mode or very last iteration)
-					if !fast && ((simN < len(sims)-1) || (hostN < len(hosts)-1)) {
-						<-ctx.Done()
-					}
-
-					cancel()
-				}
+			if err == nil {
+				printMsg(sim, sim.SuccessMsg)
 			}
-		}()
+		}
+		sim.Cleanup()
 	}
 
 	printGoodbye()
