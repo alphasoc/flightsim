@@ -248,8 +248,8 @@ var allModules = []Module{
 		NumOfHosts: 1,
 		HeaderMsg:  "Preparing Tor connection",
 		HostMsg:    "Connecting to %s",
-		SuccessMsg: "Success! Tor use is permitted in this environment",
-		Timeout:    20 * time.Second,
+		//SuccessMsg: "Success! Tor use is permitted in this environment",
+		Timeout: 10 * time.Second,
 	},
 }
 
@@ -283,27 +283,35 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 			continue
 		}
 
-		for hostN, host := range hosts {
-			printMsg(sim, sim.FormatHost(host))
-
-			if !dryRun {
-				ctx, cancel := context.WithTimeout(context.Background(), sim.Timeout)
-				if err := sim.Module.Simulate(ctx, extIP, host); err != nil {
-					// TODO: some module can return custom messages (e.g. hijack)
-					// and "ERROR" prefix shouldn't be printed then
-					printMsg(sim, "ERROR: "+err.Error())
-				} else {
-					printMsg(sim, sim.SuccessMsg)
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					printMsg(sim, "ERROR: "+fmt.Sprint(r))
 				}
+			}()
 
-				// wait until context expires (unless fast mode or very last iteration)
-				if !fast && ((simN < len(sims)-1) || (hostN < len(hosts)-1)) {
-					<-ctx.Done()
+			for hostN, host := range hosts {
+				printMsg(sim, sim.FormatHost(host))
+
+				if !dryRun {
+					ctx, cancel := context.WithTimeout(context.Background(), sim.Timeout)
+					if err := sim.Module.Simulate(ctx, extIP, host); err != nil {
+						// TODO: some module can return custom messages (e.g. hijack)
+						// and "ERROR" prefix shouldn't be printed then
+						printMsg(sim, "ERROR: "+err.Error())
+					} else {
+						printMsg(sim, sim.SuccessMsg)
+					}
+
+					// wait until context expires (unless fast mode or very last iteration)
+					if !fast && ((simN < len(sims)-1) || (hostN < len(hosts)-1)) {
+						<-ctx.Done()
+					}
+
+					cancel()
 				}
-
-				cancel()
 			}
-		}
+		}()
 	}
 
 	printGoodbye()
