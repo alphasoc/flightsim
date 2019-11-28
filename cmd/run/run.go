@@ -268,6 +268,7 @@ func (s *Simulation) Name() string {
 }
 
 func run(sims []*Simulation, extIP net.IP, size int) error {
+	var isSuccessfull bool = false
 	printWelcome(extIP.String())
 	printHeader()
 	for simN, sim := range sims {
@@ -304,6 +305,8 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 							// TODO: some module can return custom messages (e.g. hijack)
 							// and "ERROR" prefix shouldn't be printed then
 							printMsg(sim, "ERROR: "+err.Error())
+						} else {
+							isSuccessfull = true
 						}
 
 						// wait until context expires (unless fast mode or very last iteration)
@@ -315,7 +318,7 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 					}
 				}
 			}()
-			if err == nil {
+			if isSuccessfull {
 				printMsg(sim, sim.SuccessMsg)
 			}
 		}

@@ -62,11 +62,13 @@ func (t TorSimulator) Simulate(ctx context.Context, bind net.IP, dst string) err
 	}
 
 	httpClient := &http.Client{Transport: &http.Transport{DialContext: dialer.DialContext}}
-	resp, err := httpClient.Get("http://" + dst)
+	req, err := http.NewRequestWithContext(ctx, "GET", "http://"+dst, nil)
 	if err != nil {
-		if isSoftError(err) {
-			return nil
-		}
+		return err
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
