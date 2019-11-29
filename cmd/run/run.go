@@ -268,10 +268,10 @@ func (s *Simulation) Name() string {
 }
 
 func run(sims []*Simulation, extIP net.IP, size int) error {
-	var isSuccessfull bool = false
 	printWelcome(extIP.String())
 	printHeader()
 	for simN, sim := range sims {
+		var isSuccessfull bool = false
 		err := sim.Init()
 		if err != nil {
 			printMsg(sim, "ERROR: "+fmt.Sprint(err))
