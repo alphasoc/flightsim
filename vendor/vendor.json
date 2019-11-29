@@ -3,6 +3,12 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "qYoomK9/tdIFJOWXVKTKQ4qFWm4=",
+			"path": "github.com/cretz/bine/tor",
+			"revision": "1c71414a61dcfcb777131646876d060bf5549db7",
+			"revisionTime": "2019-11-05T22:31:59Z"
+		},
+		{
 			"checksumSHA1": "rJab1YdNhQooDiBWNnt7TLWPyBU=",
 			"path": "github.com/pkg/errors",
 			"revision": "f15c970de5b76fac0b59abb32d62c17cc7bed265",
