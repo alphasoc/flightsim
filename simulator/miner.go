@@ -17,6 +17,13 @@ func NewStratumMiner() *StratumMiner {
 	return &StratumMiner{}
 }
 
+func Init() error {
+	return nil
+}
+
+func Cleanup() {
+}
+
 //Simulate connection to mining pool using Stratum protocol
 func (m StratumMiner) Simulate(ctx context.Context, bind net.IP, dst string) error {
 	d := &net.Dialer{}

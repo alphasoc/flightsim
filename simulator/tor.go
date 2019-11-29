@@ -1,66 +1,78 @@
 package simulator
 
 import (
-	"fmt"
-	"io/ioutil"
+	"context"
 	"math/rand"
+	"net"
 	"net/http"
-	"strings"
+
+	"github.com/cretz/bine/tor"
 )
 
-// Tor simulator.
-type Tor struct {
-	TCPConnectSimulator
+//Slice containing websites hosted by torproject
+var torHosts = []string{"expyuzz4wqqyqhjn.onion", "qrmfuxwgyzk5jdjz.onion", "e4nybovdbcwaqlyt.onion", "52g5y5karruvc7bz.onion", "x3nelbld33llasqv.onion", "vijs2fmpd72nbqok.onion",
+	"z5tfsnikzulwicxs.onion", "icxe4yp32mq6gm6n.onion", "qigcb4g4xxbh5ho6.onion", "kkvj4mhsttfcrksj.onion", "3gldbgtv5e4god56.onion", "tgnv2pssfumdedyw.onion",
+	"5bam5t36aombgv76.onion", "sdscoq7snqtznauu.onion", "rqef5a5mebgq46y5.onion", "ruv6ue7d3t22el2a.onion", "zfu7x4fuagirknhb.onion", "klbl4glo2btuwyok.onion",
+	"ngp5wfw5z6ms3ynx.onion", "tngjm3owsslo3wgo.onion", "dccbbv6cooddgcrq.onion", "jqs44zhtxl2uo6gk.onion", "odz6noxeukaw43e7.onion", "54nujbl4qohb5qdp.onion",
+	"eibwzyiqgk6vgugg.onion", "f7lqb5oicvsahone.onion", "y7pm6of53hzeb7u2.onion", "n46o4uxsej2icp5l.onion", "rougmnvswfsmd4dq.onion", "l3xrunzkfufzvw2c.onion",
+	"kzcx36ytbsm5iogs.onion", "ebxqgaz3dwywcoxl.onion", "yz7lpwfhhzcdyc5y.onion", "tgel7v4rpcllsrk2.onion", "llhb3u5h3q66ha62.onion", "rh7jaux2r3tzrqp4.onion",
+	"sbe5fi5cka5l3fqe.onion", "koz2sqqf4w23qxw2.onion", "hyntj47ow4ermsrh.onion", "yabd3wlpvybdnvzg.onion", "c5qrls2slxqz6vdw.onion", "wcgqzqyfi7a6iu62.onion",
+	"6m6blys5mwg2jwex.onion", "fhny6b7b6sbslc2b.onion", "s2bweojt5vg52e5i.onion", "xlv5dckljs4vhmhm.onion", "lfdhmyq24uacliu5.onion", "vt5hknv6sblkgf22.onion",
+	"buqlpzbbcyat2jiy.onion", "bn6kma5cpxill4pe.onion", "4bflp2c4tnynnbes.onion", "2xcd24wfjiqwzwnr.onion", "dgvdmophvhunawds.onion", "fylvgu5r6gcdadeo.onion",
+	"2iqyjmvrkrq5h5mg.onion", "nraswjtnyrvywxk7.onion", "ea5faa5po25cf7fb.onion", "krkzagd5yo4bvypt.onion", "hzmun3rnnxjhkyhg.onion", "expyuzz4wqqyqhjn.onion",
 }
 
-// NewTor creates tor client simulator.
-func NewTor() *Tor {
-	return &Tor{}
+type TorSimulator struct {
+	tor *tor.Tor
 }
 
-// Hosts returns tor exit nodes.
-func (s *Tor) Hosts(scope string, size int) ([]string, error) {
+//Returns new TorSimulator
+func NewTorSimulator() *TorSimulator {
+	return &TorSimulator{}
+}
 
-	resp, err := http.Get("https://api.ipify.org")
+func (t *TorSimulator) Init() error {
+	tor, err := tor.Start(nil, &tor.StartConf{RetainTempDataDir: false})
+	tor.StopProcessOnClose = true
+	t.tor = tor
+	return err
+}
+
+func (t *TorSimulator) Cleanup() {
+	t.tor.Close()
+}
+
+//Returns random hosts from the slice limited by the parameter "size"
+func (t TorSimulator) Hosts(scope string, size int) ([]string, error) {
+	var hosts []string
+	for _, i := range rand.Perm(len(torHosts)) {
+		if len(hosts) >= size {
+			break
+		}
+		hosts = append(hosts, torHosts[i])
+	}
+	return hosts, nil
+}
+
+//Simulates connection to tor network
+func (t TorSimulator) Simulate(ctx context.Context, bind net.IP, dst string) error {
+	dialer, err := t.tor.Dialer(ctx, nil)
 	if err != nil {
-		return nil, err
+		return err
+	}
+
+	httpClient := &http.Client{Transport: &http.Transport{DialContext: dialer.DialContext}}
+	//req, err := http.NewRequestWithContext(ctx, "GET", "http://"+dst, nil)
+	req, err := http.NewRequest("GET", "http://"+dst, nil)
+	if err != nil {
+		return err
+	}
+	req = req.WithContext(ctx)
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
 	}
 	defer resp.Body.Close()
 
-	ip := "1.1.1.1"
-	if resp.StatusCode == http.StatusOK {
-		body, err2 := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err2
-		}
-		ip = string(body)
-	}
-
-	url := fmt.Sprintf("https://check.torproject.org/cgi-bin/TorBulkExitList.py?ip=%s", ip)
-	resp, err = http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("check.torproject.org returned %s", resp.Status)
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	ips := strings.Split(string(body), "\n")
-	// first 3 lines contain comment
-	ips = ips[3:]
-
-	var (
-		hosts []string
-		idx   = rand.Perm(len(ips))
-	)
-	for n, i := 0, 0; n < len(ips) && i < size; n, i = n+1, i+1 {
-		hosts = append(hosts, ips[idx[n]]+":80")
-	}
-
-	return hosts, nil
+	return nil
 }

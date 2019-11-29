@@ -69,6 +69,13 @@ func NewSpambot() *Spambot {
 	return &Spambot{}
 }
 
+func (Spambot) Init() error {
+	return nil
+}
+
+func (Spambot) Cleanup() {
+}
+
 // Hosts returns random SMTP servers.
 func (s *Spambot) Hosts(scope string, size int) ([]string, error) {
 	var (
