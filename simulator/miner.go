@@ -17,11 +17,11 @@ func NewStratumMiner() *StratumMiner {
 	return &StratumMiner{}
 }
 
-func Init() error {
+func (StratumMiner) Init() error {
 	return nil
 }
 
-func Cleanup() {
+func (StratumMiner) Cleanup() {
 }
 
 //Simulate connection to mining pool using Stratum protocol
