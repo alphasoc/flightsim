@@ -9,9 +9,11 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
+//IMCP tunneling simulator
 type ICMPtunnel struct {
 }
 
+//Creates new IMCP tunnel simulator
 func NewICMPtunnel() *ICMPtunnel {
 	return &ICMPtunnel{}
 }
@@ -24,17 +26,20 @@ func (ICMPtunnel) Init() error {
 func (ICMPtunnel) Cleanup() {
 }
 
+//Returns host used for tunneling
 func (ICMPtunnel) Hosts(scope string, size int) ([]string, error) {
 	//return []string{"sandbox.alphasoc.xyz"}, nil
 	return []string{"1.1.1.1"}, nil
 }
 
+//Simulate IMCP tunneling for given dst
 func (ICMPtunnel) Simulate(ctx context.Context, bind net.IP, dst string) error {
 	c, err := icmp.ListenPacket("ip4:icmp", bind.String())
 	if err != nil {
 		return err
 	}
 	defer c.Close()
+
 	deadline, _ := ctx.Deadline()
 	c.SetDeadline(deadline)
 
