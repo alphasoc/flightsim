@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 
 	"github.com/alphasoc/flightsim/cmd/run"
@@ -30,6 +33,11 @@ Cheatsheet:
 `
 
 func main() {
+	url, ok := isLatestVersion()
+	if !ok {
+		fmt.Printf("New release found, check: %v\n\n", url)
+	}
+
 	cmdRoot := flag.NewFlagSet("flightsim", flag.ExitOnError)
 	cmdRoot.Usage = func() {
 		fmt.Fprintln(os.Stderr, usage)
@@ -61,4 +69,49 @@ func main() {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
+}
+
+func isLatestVersion() (string, bool) {
+	version, url, err := getLatestReleaseVersion()
+	if err != nil || Version == version {
+		return "", true
+	}
+	return url, false
+}
+
+func getLatestReleaseVersion() (string, string, error) {
+	var version string
+	var url string
+	httpClient := &http.Client{}
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/alphasoc/flightsim/releases/latest", nil)
+	if err != nil {
+		return "", "", err
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return "", "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", "", err
+	}
+
+	var objmap map[string]*json.RawMessage
+	err = json.Unmarshal(body, &objmap)
+	if err != nil {
+		return "", "", err
+	}
+	err = json.Unmarshal(*objmap["tag_name"], &version)
+	if err != nil {
+		return "", "", err
+	}
+	err = json.Unmarshal(*objmap["html_url"], &url)
+	if err != nil {
+		return "", "", err
+	}
+
+	return version, url, nil
 }
