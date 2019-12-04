@@ -90,7 +90,6 @@ func RunCmd(args []string) error {
 	// 		sims[i].Timeout = 100 * time.Millisecond
 	// 	}
 	// }
-
 	return run(sims, extIP, *size)
 }
 
