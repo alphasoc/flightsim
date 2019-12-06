@@ -31,7 +31,7 @@ func (ICMPtunnel) Cleanup() {
 
 //Hosts returns host used for tunneling
 func (ICMPtunnel) Hosts(scope string, size int) ([]string, error) {
-	return []string{"34.76.148.164"}, nil
+	return []string{"35.237.9.45"}, nil
 }
 
 //Simulate IMCP tunneling for given dst

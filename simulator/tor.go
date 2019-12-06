@@ -32,7 +32,7 @@ func NewTorSimulator() *TorSimulator {
 }
 
 func (t *TorSimulator) Init() error {
-	tor, err := tor.Start(nil, &tor.StartConf{RetainTempDataDir: false})
+	tor, err := tor.Start(nil, &tor.StartConf{RetainTempDataDir: false, ExtraArgs: []string{"--quiet"}})
 	tor.StopProcessOnClose = true
 	t.tor = tor
 	return err
