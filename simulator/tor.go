@@ -26,13 +26,13 @@ type TorSimulator struct {
 	tor *tor.Tor
 }
 
-//Returns new TorSimulator
+//NewTorSimulator returns new TorSimulator
 func NewTorSimulator() *TorSimulator {
 	return &TorSimulator{}
 }
 
 func (t *TorSimulator) Init() error {
-	tor, err := tor.Start(nil, &tor.StartConf{RetainTempDataDir: false})
+	tor, err := tor.Start(nil, &tor.StartConf{RetainTempDataDir: false, ExtraArgs: []string{"--quiet"}})
 	tor.StopProcessOnClose = true
 	t.tor = tor
 	return err
@@ -42,7 +42,7 @@ func (t *TorSimulator) Cleanup() {
 	t.tor.Close()
 }
 
-//Returns random hosts from the slice limited by the parameter "size"
+//Hosts returns random hosts from predefined set
 func (t TorSimulator) Hosts(scope string, size int) ([]string, error) {
 	var hosts []string
 	for _, i := range rand.Perm(len(torHosts)) {
@@ -54,7 +54,7 @@ func (t TorSimulator) Hosts(scope string, size int) ([]string, error) {
 	return hosts, nil
 }
 
-//Simulates connection to tor network
+//Simulate connection to tor network
 func (t TorSimulator) Simulate(ctx context.Context, bind net.IP, dst string) error {
 	dialer, err := t.tor.Dialer(ctx, nil)
 	if err != nil {
@@ -62,7 +62,7 @@ func (t TorSimulator) Simulate(ctx context.Context, bind net.IP, dst string) err
 	}
 
 	httpClient := &http.Client{Transport: &http.Transport{DialContext: dialer.DialContext}}
-	//req, err := http.NewRequestWithContext(ctx, "GET", "http://"+dst, nil)
+	//req, err := http.NewRequestWithContext(ctx, "GET", "http://"+dst, nil) //works in go 1.13
 	req, err := http.NewRequest("GET", "http://"+dst, nil)
 	if err != nil {
 		return err

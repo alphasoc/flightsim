@@ -90,7 +90,6 @@ func RunCmd(args []string) error {
 	// 		sims[i].Timeout = 100 * time.Millisecond
 	// 	}
 	// }
-
 	return run(sims, extIP, *size)
 }
 
@@ -258,6 +257,14 @@ var allModules = []Module{
 		HostMsg:    "Connecting to %s",
 		SuccessMsg: "Success! Tor use is permitted in this environment",
 		Timeout:    10 * time.Second,
+	},
+	Module{
+		Module:     simulator.NewICMPtunnel(),
+		Name:       "icmptunnel",
+		Pipeline:   PipelineDNS,
+		NumOfHosts: 1,
+		HostMsg:    "Simulating ICMP tunneling via %s",
+		Timeout:    20 * time.Second,
 	},
 }
 
