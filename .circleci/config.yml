@@ -6,14 +6,14 @@ jobs:
     working_directory: /go/src/github.com/alphasoc/flightsim
     steps:
       - checkout
-      - run: go install -v ./...
-      - run: go test -race -v ./...
+      - run: go install -mod vendor -v ./...
+      - run: go test -mod vendor -race -v ./...
       - run:
           name: build
           command: |
-            GOARCH=amd64 GOOS=windows go build -o flightsim-windows-amd64.exe -ldflags "-X main.Version=$(git describe)"
-            GOARCH=amd64 GOOS=linux   go build -o flightsim-linux-amd64       -ldflags "-X main.Version=$(git describe)"
-            GOARCH=amd64 GOOS=darwin  go build -o flightsim-darwin-amd64      -ldflags "-X main.Version=$(git describe)"
+            GOARCH=amd64 GOOS=windows go build -mod vendor -o flightsim-windows-amd64.exe -ldflags "-X main.Version=$(git describe)"
+            GOARCH=amd64 GOOS=linux   go build -mod vendor -o flightsim-linux-amd64       -ldflags "-X main.Version=$(git describe)"
+            GOARCH=amd64 GOOS=darwin  go build -mod vendor -o flightsim-darwin-amd64      -ldflags "-X main.Version=$(git describe)"
       - persist_to_workspace:
           root: .
           paths:
