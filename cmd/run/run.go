@@ -241,6 +241,14 @@ var allModules = []Module{
 		HostMsg: "Simulating DNS tunneling via *.%s",
 		Timeout: 10 * time.Second,
 	},
+	Module{
+		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("cryptomining", wisdom.HostTypeIP), simulator.NewStratumMiner()),
+		Name:       "miner",
+		Pipeline:   PipelineIP,
+		NumOfHosts: 5,
+		HeaderMsg:  "Preparing a random sample of cryptomining IP:port pairs",
+		Timeout:    1 * time.Second,
+	},
 }
 
 type Simulation struct {

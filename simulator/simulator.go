@@ -2,6 +2,7 @@ package simulator
 
 import (
 	"context"
+	"io"
 	"net"
 	"strings"
 
@@ -75,6 +76,9 @@ func (DNSResolveSimulator) Simulate(ctx context.Context, bind net.IP, dst string
 }
 
 func isSoftError(err error, ss ...string) bool {
+	if err == io.EOF {
+		return true
+	}
 	netErr, ok := err.(net.Error)
 	if !ok {
 		return false
