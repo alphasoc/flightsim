@@ -18,6 +18,13 @@ func NewTunnel() *Tunnel {
 	return &Tunnel{}
 }
 
+func (Tunnel) Init() error {
+	return nil
+}
+
+func (Tunnel) Cleanup() {
+}
+
 // Simulate lookups for txt records for give host.
 func (*Tunnel) Simulate(ctx context.Context, extIP net.IP, host string) error {
 	d := &net.Dialer{
