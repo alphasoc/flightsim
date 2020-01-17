@@ -105,7 +105,7 @@ func selectSimulations(names []string) ([]*Simulation, error) {
 
 		var found bool
 		for _, m := range allModules {
-			if m.Name == name {
+			if name == m.Name || strings.HasPrefix(m.Name, name+"-") {
 				res = append(res, &Simulation{
 					Module: m,
 					Scope:  scope,
@@ -233,7 +233,7 @@ var allModules = []Module{
 	},
 	Module{
 		Module:     simulator.NewTunnel(),
-		Name:       "tunnel",
+		Name:       "tunnel-dns",
 		Pipeline:   PipelineDNS,
 		NumOfHosts: 25,
 		// HeaderMsg:  "Preparing DNS tunnel hostnames",
@@ -260,7 +260,7 @@ var allModules = []Module{
 	},
 	Module{
 		Module:     simulator.NewICMPtunnel(),
-		Name:       "icmptunnel",
+		Name:       "tunnel-icmp",
 		Pipeline:   PipelineDNS,
 		NumOfHosts: 1,
 		HostMsg:    "Simulating ICMP tunneling via %s",
