@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"os"
 
 	"github.com/cretz/bine/tor"
 )
@@ -32,7 +33,11 @@ func NewTorSimulator() *TorSimulator {
 }
 
 func (t *TorSimulator) Init() error {
-	tor, err := tor.Start(nil, &tor.StartConf{RetainTempDataDir: false, ExtraArgs: []string{"--quiet"}})
+	tor, err := tor.Start(nil, &tor.StartConf{
+		TempDataDirBase:   os.TempDir(),
+		RetainTempDataDir: false,
+		ExtraArgs:         []string{"--quiet"}},
+	)
 	tor.StopProcessOnClose = true
 	t.tor = tor
 	return err
