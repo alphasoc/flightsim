@@ -2,9 +2,12 @@ package simulator
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"math/rand"
 	"net"
 	"os"
+	"syscall"
 
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv4"
@@ -26,6 +29,11 @@ func NewICMPtunnel() *ICMPtunnel {
 func (s *ICMPtunnel) Init(bind net.IP) error {
 	c, err := icmp.ListenPacket("ip4:icmp", bind.String())
 	if err != nil {
+		// check if it's syscall error 1: "operation not permitted"
+		var errno syscall.Errno
+		if errors.As(err, &errno); errno == 1 {
+			err = fmt.Errorf("%w (make sure you have sufficient network privileges or try to run as root)", err)
+		}
 		return err
 	}
 	s.c = c
