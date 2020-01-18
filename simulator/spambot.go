@@ -69,8 +69,8 @@ func NewSpambot() *Spambot {
 	return &Spambot{}
 }
 
-func (Spambot) Init() error {
-	return nil
+func (s *Spambot) Init(bind net.IP) error {
+	return s.TCPConnectSimulator.Init(bind)
 }
 
 func (Spambot) Cleanup() {

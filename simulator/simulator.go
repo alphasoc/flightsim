@@ -10,8 +10,8 @@ import (
 )
 
 type Simulator interface {
-	Simulate(ctx context.Context, bind net.IP, host string) error
-	Init() error
+	Init(bind net.IP) error
+	Simulate(ctx context.Context, host string) error
 	Cleanup()
 }
 
@@ -33,19 +33,21 @@ func CreateModule(src HostSource, sim Simulator) Module {
 }
 
 type TCPConnectSimulator struct {
+	bind net.IP
 }
 
-func (TCPConnectSimulator) Init() error {
+func (s *TCPConnectSimulator) Init(bind net.IP) error {
+	s.bind = bind
 	return nil
 }
 
 func (TCPConnectSimulator) Cleanup() {
 }
 
-func (TCPConnectSimulator) Simulate(ctx context.Context, bind net.IP, dst string) error {
+func (s *TCPConnectSimulator) Simulate(ctx context.Context, dst string) error {
 	d := &net.Dialer{}
-	if bind != nil {
-		d.LocalAddr = &net.TCPAddr{IP: bind}
+	if s.bind != nil {
+		d.LocalAddr = &net.TCPAddr{IP: s.bind}
 	}
 
 	conn, err := d.DialContext(ctx, "tcp", dst)
@@ -60,24 +62,26 @@ func (TCPConnectSimulator) Simulate(ctx context.Context, bind net.IP, dst string
 }
 
 type DNSResolveSimulator struct {
+	bind net.IP
 }
 
-func (DNSResolveSimulator) Init() error {
+func (s *DNSResolveSimulator) Init(bind net.IP) error {
+	s.bind = bind
 	return nil
 }
 
 func (DNSResolveSimulator) Cleanup() {
 }
 
-func (DNSResolveSimulator) Simulate(ctx context.Context, bind net.IP, dst string) error {
+func (s *DNSResolveSimulator) Simulate(ctx context.Context, dst string) error {
 	host, _, _ := net.SplitHostPort(dst)
 	if host == "" {
 		host = dst
 	}
 
 	d := &net.Dialer{}
-	if bind != nil {
-		d.LocalAddr = &net.UDPAddr{IP: bind}
+	if s.bind != nil {
+		d.LocalAddr = &net.UDPAddr{IP: s.bind}
 	}
 	r := &net.Resolver{
 		PreferGo: true,

@@ -2,6 +2,7 @@ package simulator
 
 import (
 	"math/rand"
+	"net"
 	"strings"
 
 	"github.com/alphasoc/flightsim/utils"
@@ -19,8 +20,8 @@ func NewDGA() *DGA {
 	return &DGA{}
 }
 
-func (DGA) Init() error {
-	return nil
+func (s *DGA) Init(bind net.IP) error {
+	return s.DNSResolveSimulator.Init(bind)
 }
 
 func (DGA) Cleanup() {

@@ -11,14 +11,17 @@ import (
 )
 
 // Tunnel simulator.
-type Tunnel struct{}
+type Tunnel struct {
+	bind net.IP
+}
 
 // NewTunnel creates dns tunnel simulator.
 func NewTunnel() *Tunnel {
 	return &Tunnel{}
 }
 
-func (Tunnel) Init() error {
+func (s *Tunnel) Init(bind net.IP) error {
+	s.bind = bind
 	return nil
 }
 
@@ -26,9 +29,9 @@ func (Tunnel) Cleanup() {
 }
 
 // Simulate lookups for txt records for give host.
-func (*Tunnel) Simulate(ctx context.Context, extIP net.IP, host string) error {
+func (s *Tunnel) Simulate(ctx context.Context, host string) error {
 	d := &net.Dialer{
-		LocalAddr: &net.UDPAddr{IP: extIP},
+		LocalAddr: &net.UDPAddr{IP: s.bind},
 	}
 	r := &net.Resolver{
 		PreferGo: true,

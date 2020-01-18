@@ -15,6 +15,7 @@ const payloadSize int = 1400
 
 //ICMPtunnel simulator
 type ICMPtunnel struct {
+	c *icmp.PacketConn
 }
 
 //NewICMPtunnel Creates new IMCP tunnel simulator
@@ -22,11 +23,19 @@ func NewICMPtunnel() *ICMPtunnel {
 	return &ICMPtunnel{}
 }
 
-func (ICMPtunnel) Init() error {
+func (s *ICMPtunnel) Init(bind net.IP) error {
+	c, err := icmp.ListenPacket("ip4:icmp", bind.String())
+	if err != nil {
+		return err
+	}
+	s.c = c
 	return nil
 }
 
-func (ICMPtunnel) Cleanup() {
+func (s *ICMPtunnel) Cleanup() {
+	if s.c != nil {
+		s.c.Close()
+	}
 }
 
 //Hosts returns host used for tunneling
@@ -35,15 +44,9 @@ func (ICMPtunnel) Hosts(scope string, size int) ([]string, error) {
 }
 
 //Simulate IMCP tunneling for given dst
-func (ICMPtunnel) Simulate(ctx context.Context, bind net.IP, dst string) error {
-	c, err := icmp.ListenPacket("ip4:icmp", bind.String())
-	if err != nil {
-		return err
-	}
-	defer c.Close()
-
+func (s *ICMPtunnel) Simulate(ctx context.Context, dst string) error {
 	deadline, _ := ctx.Deadline()
-	c.SetDeadline(deadline)
+	s.c.SetDeadline(deadline)
 
 	for i := 0; i < pingCount; i++ {
 		r := make([]byte, payloadSize)
@@ -61,12 +64,12 @@ func (ICMPtunnel) Simulate(ctx context.Context, bind net.IP, dst string) error {
 		if err != nil {
 			return err
 		}
-		if _, err := c.WriteTo(binmsg, &net.IPAddr{IP: net.ParseIP(dst)}); err != nil {
+		if _, err := s.c.WriteTo(binmsg, &net.IPAddr{IP: net.ParseIP(dst)}); err != nil {
 			return err
 		}
 
 		rb := make([]byte, 1500)
-		_, _, err = c.ReadFrom(rb)
+		_, _, err = s.c.ReadFrom(rb)
 		if err != nil {
 			return err
 		}

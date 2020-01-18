@@ -35,7 +35,9 @@ func NewTorSimulator() *TorSimulator {
 	return &TorSimulator{}
 }
 
-func (t *TorSimulator) Init() error {
+// Tor creates tor connector;
+// There is no way to pass the bind IP to tor, so we ignore it.
+func (t *TorSimulator) Init(_ net.IP) error {
 	tor, err := tor.Start(nil, &tor.StartConf{
 		TempDataDirBase:   os.TempDir(),
 		RetainTempDataDir: false,
@@ -71,7 +73,7 @@ func (t TorSimulator) Hosts(scope string, size int) ([]string, error) {
 }
 
 //Simulate connection to tor network
-func (t TorSimulator) Simulate(ctx context.Context, bind net.IP, dst string) error {
+func (t TorSimulator) Simulate(ctx context.Context, dst string) error {
 	dialer, err := t.tor.Dialer(ctx, nil)
 	if err != nil {
 		return err

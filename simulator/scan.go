@@ -61,8 +61,8 @@ func NewPortScan() *PortScan {
 	return &PortScan{}
 }
 
-func (PortScan) Init() error {
-	return nil
+func (s *PortScan) Init(bind net.IP) error {
+	return s.tcp.Init(bind)
 }
 
 func (PortScan) Cleanup() {
@@ -100,7 +100,7 @@ func (s *PortScan) Hosts(scope string, size int) ([]string, error) {
 	return hosts, nil
 }
 
-func (s *PortScan) Simulate(ctx context.Context, bind net.IP, dst string) error {
+func (s *PortScan) Simulate(ctx context.Context, dst string) error {
 	callTimeout := 200 * time.Millisecond
 	// If deadline set, divide the global timeout across every call (port)
 	if d, ok := ctx.Deadline(); ok {
@@ -110,7 +110,7 @@ func (s *PortScan) Simulate(ctx context.Context, bind net.IP, dst string) error 
 
 	for _, port := range scanPorts {
 		ctx, _ := context.WithTimeout(ctx, callTimeout)
-		err := s.tcp.Simulate(ctx, bind, fmt.Sprintf("%s:%d", dst, port))
+		err := s.tcp.Simulate(ctx, fmt.Sprintf("%s:%d", dst, port))
 		if err != nil {
 			return err
 		}
