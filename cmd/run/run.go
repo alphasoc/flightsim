@@ -235,7 +235,7 @@ var allModules = []Module{
 		Module:     simulator.NewTunnel(),
 		Name:       "tunnel-dns",
 		Pipeline:   PipelineDNS,
-		NumOfHosts: 25,
+		NumOfHosts: 1,
 		// HeaderMsg:  "Preparing DNS tunnel hostnames",
 		HostMsg: "Simulating DNS tunneling via *.%s",
 		Timeout: 10 * time.Second,
