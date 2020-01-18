@@ -26,7 +26,6 @@ func printWelcome(ip string) {
 AlphaSOC Network Flight Simulator™ %s (https://github.com/alphasoc/flightsim)
 The IP address of the network interface is %s
 The current time is %s
-
 `, Version, ip, time.Now().Format("02-Jan-06 15:04:05"))
 }
 

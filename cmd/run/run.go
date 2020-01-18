@@ -255,8 +255,9 @@ var allModules = []Module{
 		NumOfHosts: 5,
 		HeaderMsg:  "Preparing Tor connection",
 		HostMsg:    "Connecting to %s",
-		SuccessMsg: "Success! Tor use is permitted in this environment",
-		Timeout:    10 * time.Second,
+		SuccessMsg: "Tor use is permitted in this environment",
+		// FailMsg:    "Couldn't contact Tor network",
+		Timeout: 10 * time.Second,
 	},
 	Module{
 		Module:     simulator.NewICMPtunnel(),
@@ -282,14 +283,22 @@ func (s *Simulation) Name() string {
 	return name
 }
 
+const (
+	msgPrefixErrorInit    = "FATAL: Couldn't start the module: "
+	msgPrefixErrorRecover = "FATAL: Module terminated: "
+)
+
 func run(sims []*Simulation, extIP net.IP, size int) error {
 	printWelcome(extIP.String())
 	printHeader()
+
 	for simN, sim := range sims {
-		var isSuccessfull bool = false
+		fmt.Print("\n")
+
+		okHosts := 0
 		err := sim.Init()
 		if err != nil {
-			printMsg(sim, "ERROR: "+fmt.Sprint(err))
+			printMsg(sim, msgPrefixErrorInit+fmt.Sprint(err))
 		} else {
 			printMsg(sim, sim.HeaderMsg)
 
@@ -300,14 +309,15 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 
 			hosts, err := sim.Module.Hosts(sim.Scope, numOfHosts)
 			if err != nil {
-				printMsg(sim, "failed: "+err.Error())
+				printMsg(sim, msgPrefixErrorInit+err.Error())
 				continue
 			}
 
+			// Wrap module execution in a function, so we can recover from panics
 			func() {
 				defer func() {
 					if r := recover(); r != nil {
-						printMsg(sim, "ERROR: "+fmt.Sprint(r))
+						printMsg(sim, msgPrefixErrorRecover+fmt.Sprint(r))
 					}
 				}()
 
@@ -319,9 +329,9 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 						if err := sim.Module.Simulate(ctx, extIP, host); err != nil {
 							// TODO: some module can return custom messages (e.g. hijack)
 							// and "ERROR" prefix shouldn't be printed then
-							printMsg(sim, "ERROR: "+err.Error())
+							printMsg(sim, fmt.Sprintf("ERROR: %s: %s", host, err.Error()))
 						} else {
-							isSuccessfull = true
+							okHosts++
 						}
 
 						// wait until context expires (unless fast mode or very last iteration)
@@ -333,9 +343,13 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 					}
 				}
 			}()
-			if isSuccessfull {
-				printMsg(sim, sim.SuccessMsg)
+
+			msg := fmt.Sprintf("Done (%d/%d)", okHosts, len(hosts))
+			if okHosts > 0 && sim.SuccessMsg != "" {
+				msg = fmt.Sprintf("%s: %s", msg, sim.SuccessMsg)
 			}
+
+			printMsg(sim, msg)
 		}
 		sim.Cleanup()
 	}

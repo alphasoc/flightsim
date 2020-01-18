@@ -2,10 +2,13 @@ package simulator
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"math/rand"
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 
 	"github.com/cretz/bine/tor"
 )
@@ -38,13 +41,21 @@ func (t *TorSimulator) Init() error {
 		RetainTempDataDir: false,
 		ExtraArgs:         []string{"--quiet"}},
 	)
+	if err != nil {
+		if errors.Is(err, exec.ErrNotFound) {
+			err = fmt.Errorf("%w (make sure you have tor installed in the system)", err)
+		}
+		return err
+	}
 	tor.StopProcessOnClose = true
 	t.tor = tor
-	return err
+	return nil
 }
 
 func (t *TorSimulator) Cleanup() {
-	t.tor.Close()
+	if t.tor != nil {
+		t.tor.Close()
+	}
 }
 
 //Hosts returns random hosts from predefined set
