@@ -26,7 +26,7 @@ var allModuleNames []string = func() []string {
 	)
 
 	for _, m := range allModules {
-		if !seen[m.Name] {
+		if !seen[m.Name] && !m.Experimental {
 			names = append(names, m.Name)
 			seen[m.Name] = true
 		}
@@ -131,12 +131,13 @@ const (
 
 type Module struct {
 	simulator.Module
-	Name       string
-	Pipeline   Pipeline
-	NumOfHosts int
-	HeaderMsg  string
-	HostMsg    string
-	Timeout    time.Duration
+	Name         string
+	Pipeline     Pipeline
+	Experimental bool
+	NumOfHosts   int
+	HeaderMsg    string
+	HostMsg      string
+	Timeout      time.Duration
 	// FailMsg    string
 	SuccessMsg string
 }
@@ -249,13 +250,14 @@ var allModules = []Module{
 		Timeout:    1 * time.Second,
 	},
 	Module{
-		Module:     simulator.NewTorSimulator(),
-		Name:       "tor",
-		Pipeline:   PipelineDNS,
-		NumOfHosts: 5,
-		HeaderMsg:  "Preparing Tor connection",
-		HostMsg:    "Connecting to %s",
-		SuccessMsg: "Tor use is permitted in this environment",
+		Module:       simulator.NewTorSimulator(),
+		Name:         "tor",
+		Pipeline:     PipelineDNS,
+		Experimental: true,
+		NumOfHosts:   5,
+		HeaderMsg:    "Preparing Tor connection",
+		HostMsg:      "Connecting to %s",
+		SuccessMsg:   "Tor use is permitted in this environment",
 		// FailMsg:    "Couldn't contact Tor network",
 		Timeout: 10 * time.Second,
 	},
