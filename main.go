@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -33,9 +32,9 @@ Cheatsheet:
 `
 
 func main() {
-	url, ok := isLatestVersion()
-	if !ok {
-		fmt.Printf("New release found, check: %v\n\n", url)
+	latestVersion, _ := getLatestReleaseVersion()
+	if latestVersion != Version {
+		fmt.Printf("New release found (%s), check: %s\n\n", latestVersion, githubDownloadReleaseURL)
 	}
 
 	cmdRoot := flag.NewFlagSet("flightsim", flag.ExitOnError)
@@ -71,47 +70,22 @@ func main() {
 	}
 }
 
-func isLatestVersion() (string, bool) {
-	version, url, err := getLatestReleaseVersion()
-	if err != nil || Version == version {
-		return "", true
-	}
-	return url, false
-}
+const (
+	githubCheckReleaseURL    = "https://api.github.com/repos/alphasoc/flightsim/releases/latest"
+	githubDownloadReleaseURL = "https://github.com/alphasoc/flightsim/releases"
+)
 
-func getLatestReleaseVersion() (string, string, error) {
-	var version string
-	var url string
-	httpClient := &http.Client{}
-	req, err := http.NewRequest("GET", "https://api.github.com/repos/alphasoc/flightsim/releases/latest", nil)
+func getLatestReleaseVersion() (string, error) {
+	resp, err := http.Get(githubCheckReleaseURL)
 	if err != nil {
-		return "", "", err
-	}
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return "", "", err
+		return "", err
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", "", err
+	var release struct {
+		TagName string `json:"tag_name"`
 	}
 
-	var objmap map[string]*json.RawMessage
-	err = json.Unmarshal(body, &objmap)
-	if err != nil {
-		return "", "", err
-	}
-	err = json.Unmarshal(*objmap["tag_name"], &version)
-	if err != nil {
-		return "", "", err
-	}
-	err = json.Unmarshal(*objmap["html_url"], &url)
-	if err != nil {
-		return "", "", err
-	}
-
-	return version, url, nil
+	err = json.NewDecoder(resp.Body).Decode(&release)
+	return release.TagName, err
 }
