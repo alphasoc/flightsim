@@ -24,9 +24,10 @@ Available commands:
     version     Prints the version number
 
 Cheatsheet:
-    flightsim run                Run all the modules
-    flightsim run c2             Simulate C2 traffic
-    flightsim run c2:trickbot    Simulate C2 traffic for the TrickBot family
+    flightsim run                   Run all the modules
+    flightsim run c2                Simulate C2 traffic
+    flightsim run c2:trickbot       Simulate C2 traffic for the TrickBot family
+    flightsim run ssh-transfer:1MB  Simulate a 1MB SSH/SFTP file transfer
 `
 
 func main() {
