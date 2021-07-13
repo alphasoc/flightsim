@@ -277,6 +277,15 @@ var allModules = []Module{
 		HeaderMsg:  "Resolving random imposter domains",
 		Timeout:    1 * time.Second,
 	},
+	Module{
+		Module:     simulator.NewSSHTransfer(),
+		Name:       "ssh-transfer",
+		Pipeline:   PipelineIP,
+		NumOfHosts: 2,
+		HostMsg:    "Simulating an SSH/SFTP file transfer to %s",
+		HeaderMsg:  "Preparing to send a randomly generated file",
+		Timeout:    5 * time.Minute,
+	},
 }
 
 type Simulation struct {
