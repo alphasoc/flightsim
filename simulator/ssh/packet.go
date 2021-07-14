@@ -20,12 +20,18 @@ func ReadPacket(r io.Reader) ([]byte, error) {
 	resp := make([]byte, respLenSize)
 	_, err := io.ReadFull(r, resp[:respLenSize])
 	if err != nil {
-		return nil, fmt.Errorf("failed reading response: %v", err)
+		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			return resp, err
+		}
+		return nil, fmt.Errorf("failed reading response: %w", err)
 	}
 	length := binary.BigEndian.Uint32(resp)
 	resp = make([]byte, length)
 	if _, err := io.ReadFull(r, resp[:length]); err != nil {
-		return nil, fmt.Errorf("failed reading response: %v", err)
+		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			return resp, err
+		}
+		return nil, fmt.Errorf("failed reading response: %w", err)
 	}
 	return resp, nil
 }
@@ -36,7 +42,7 @@ func VersionResp(data []byte) (*sdifxp.Version, error) {
 	parser := sdifxp.NewFieldParser(data)
 	version := &sdifxp.Version{Version: parser.ReadUint32()}
 	if err := parser.GetError(); err != nil {
-		return nil, fmt.Errorf("failed parsing version response: %v", err)
+		return nil, fmt.Errorf("failed parsing version response: %w", err)
 	}
 	return version, nil
 }
@@ -51,7 +57,7 @@ func OpenResp(data []byte) (*sdifxp.Handle, error) {
 	}
 	err := parser.GetError()
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing open response: %v", err)
+		return nil, fmt.Errorf("failed parsing open response: %w", err)
 	}
 	return handle, nil
 }
@@ -65,7 +71,7 @@ func StatusResp(data []byte) (*sdifxp.Status, error) {
 	status := &sdifxp.Status{}
 	err := status.Unmarshal(data)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing status response: %v", err)
+		return nil, fmt.Errorf("failed parsing status response: %w", err)
 	}
 	return status, nil
 }

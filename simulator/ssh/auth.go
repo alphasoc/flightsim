@@ -28,11 +28,11 @@ func NewSignerFromKey() (ssh.Signer, error) {
 	key := []byte(privKey)
 	parsedKey, err := ssh.ParseRawPrivateKey(key)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse private key: %v", err)
+		return nil, fmt.Errorf("unable to parse private key: %w", err)
 	}
 	signer, err := ssh.NewSignerFromKey(parsedKey)
 	if err != nil {
-		return nil, fmt.Errorf("unable to generate signer from private key: %v", err)
+		return nil, fmt.Errorf("unable to generate signer from private key: %w", err)
 	}
 	gSigner = signer
 	return gSigner, nil

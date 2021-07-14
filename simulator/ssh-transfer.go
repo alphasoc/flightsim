@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -17,13 +16,13 @@ import (
 
 const defaultSendSize = 100 * bytesize.MB
 
-// TODO where will the server side live?
-var defaultTargetHosts = []string{"127.0.0.1:22", "127.0.0.1:9999"}
+var defaultTargetHosts = []string{"sandbox.alphasoc.xyz:22", "sandbox.alphasoc.xyz:9999"}
 
 // SSHTransfer defines this simulation.
 type SSHTransfer struct {
-	src      net.IP // Connect from this IP.
-	sendSize bytesize.ByteSize
+	src       net.IP // Connect from this IP.
+	sendSize  bytesize.ByteSize
+	randomGen *rand.Rand
 }
 
 // NewSSHTransfer creates a new SSH/SFTP simulator.
@@ -34,37 +33,31 @@ func NewSSHTransfer() *SSHTransfer {
 // Init sets the source IP for this simulation.
 func (s *SSHTransfer) Init(src net.IP) error {
 	s.src = src
+	s.randomGen = rand.New(rand.NewSource(time.Now().UnixNano()))
 	return nil
 }
 
-// writeRandom writes sendSize bytes of 'random' data to the server.  An error is returned.
-func writeRandom(c *simssh.Client, handle string, sendSize bytesize.ByteSize) error {
+// writeRandom writes toSend bytes of 'random' data to the server.  An error is returned.
+func writeRandom(c *simssh.Client, handle string, toSend uint64, randomGen *rand.Rand) error {
 	// 8K writes.
 	const buffSize uint64 = 8192
-	toSendStr := sendSize.Format("%.0f", "B", false)
-	toSend, err := strconv.ParseUint(toSendStr[:len(toSendStr)-1], 10, 64)
-	if err != nil {
-		return fmt.Errorf("failed write: %v", err)
-	}
-	// Seed once.
-	rand.Seed(time.Now().UnixNano())
-	var i uint64
-	var bytes []byte
-	var payloadSize uint64
-	for i = 0; toSend > 0; i++ {
-		if toSend >= buffSize {
+	var payloadSize, sent, leftToSend, i uint64
+	bytes := make([]byte, buffSize)
+	for i = 0; sent < toSend; i++ {
+		leftToSend = toSend - sent
+		if leftToSend >= buffSize {
 			payloadSize = buffSize
 		} else {
-			payloadSize = toSend
+			payloadSize = leftToSend
 		}
-		bytes = make([]byte, payloadSize)
-		rand.Read(bytes)
+		// Read always returns len(bytes) and a nil error.
+		randomGen.Read(bytes[:payloadSize])
 		// Don't care about the actual response here.  Just the error code.
-		_, err := c.SendWrite(handle, i*buffSize, &bytes)
+		_, err := c.SendWrite(handle, i*buffSize, bytes[:payloadSize])
 		if err != nil {
-			return fmt.Errorf("failed transfer: %v", err)
+			return fmt.Errorf("failed transfer: %w", err)
 		}
-		toSend -= payloadSize
+		sent += payloadSize
 	}
 	return nil
 }
@@ -77,7 +70,7 @@ func (s *SSHTransfer) Simulate(ctx context.Context, dst string) error {
 		return err
 	}
 	// Create a Client that's ready to use for SSH/SFTP transfers.
-	c, err := simssh.NewClient("alphasoc", s.src, dst, signer)
+	c, err := simssh.NewClient(ctx, "alphasoc", s.src, dst, signer)
 	if err != nil {
 		return err
 	}
@@ -95,13 +88,13 @@ func (s *SSHTransfer) Simulate(ctx context.Context, dst string) error {
 	}
 	// Open a dummy file for writing and grab the handle returned by the server.  If used
 	// with the sandbox SFTP server, no filesystem writes will actually occurr.
-	openResp, err := c.SendOpen("thereisnofile", os.O_CREATE)
+	openResp, err := c.SendOpen("flightsim-ssh-transfer", os.O_CREATE)
 	if err != nil {
 		return err
 	}
 	handle := openResp.Handle
 	// Write s.sendSize bytes, checking for any write errors.
-	err = writeRandom(c, handle, s.sendSize)
+	err = writeRandom(c, handle, uint64(s.sendSize), s.randomGen)
 	if err != nil {
 		return err
 	}
@@ -137,7 +130,7 @@ func parseScope(scope string) ([]string, bytesize.ByteSize, error) {
 		if err != nil {
 			return []string{""},
 				bytesize.ByteSize(0),
-				fmt.Errorf("invalid command line: %v", err)
+				fmt.Errorf("invalid command line: %w", err)
 		}
 		return defaultTargetHosts, sendSize, nil
 	}
