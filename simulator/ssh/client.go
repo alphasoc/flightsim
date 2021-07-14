@@ -3,6 +3,7 @@
 package ssh
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net"
@@ -36,7 +37,7 @@ type Client struct {
 
 // NewClient initializes and returns a Client ready to be used for SSH/SFTP transfer along
 // with an error.  Note that Teardown should be called when the Client is no longer needed.
-func NewClient(user string, src net.IP, dst string, signer ssh.Signer) (*Client, error) {
+func NewClient(ctx context.Context, user string, src net.IP, dst string, signer ssh.Signer) (*Client, error) {
 	// ClientConfig will use pubkey auth, ignore the host key and apply a 5 second connection
 	// timeout.
 	config := &ssh.ClientConfig{
@@ -54,33 +55,36 @@ func NewClient(user string, src net.IP, dst string, signer ssh.Signer) (*Client,
 		LocalAddr: &net.TCPAddr{IP: src},
 		Timeout:   config.Timeout,
 	}
-	nConn, err := d.Dial("tcp", dst)
+	nConn, err := d.DialContext(ctx, "tcp", dst)
 	if err != nil {
-		return nil, fmt.Errorf("unable to connect: %v", err)
+		return nil, fmt.Errorf("unable to connect: %w", err)
+	}
+	if deadLine, ok := ctx.Deadline(); ok {
+		nConn.SetDeadline(deadLine)
 	}
 	sshConn, chans, reqs, err := ssh.NewClientConn(nConn, dst, config)
 	if err != nil {
-		return nil, fmt.Errorf("unable to connect: %v", err)
+		return nil, fmt.Errorf("unable to connect: %w", err)
 	}
 	sshClient := ssh.NewClient(sshConn, chans, reqs)
 	// Prep SFTP session and setup read/write pipes.
 	sess, err := sshClient.NewSession()
 	if err != nil {
 		sshClient.Close()
-		return nil, fmt.Errorf("failed initializing SFTP session: %v", err)
+		return nil, fmt.Errorf("failed initializing SFTP session: %w", err)
 	}
 	sess.RequestSubsystem("sftp")
 	w, err := sess.StdinPipe()
 	if err != nil {
 		sess.Close()
 		sshClient.Close()
-		return nil, fmt.Errorf("failed initializing SFTP IO: %v", err)
+		return nil, fmt.Errorf("failed initializing SFTP IO: %w", err)
 	}
 	r, err := sess.StdoutPipe()
 	if err != nil {
 		sess.Close()
 		sshClient.Close()
-		return nil, fmt.Errorf("failed initializing SFTP IO: %v", err)
+		return nil, fmt.Errorf("failed initializing SFTP IO: %w", err)
 	}
 	return &Client{sshClient, sess, w, r}, nil
 }
@@ -122,7 +126,7 @@ func (c *Client) ReadResp(expectedRespType uint8) (sdipacket.Packet, error) {
 		// along with a nil sdipacket.Packet.  We could add some additional error prefix
 		// to the message, but it's becoming crowded with little added informational value.
 		if statusResp.ErrCode != SSH_FX_OK {
-			return nil, fmt.Errorf("%v", statusResp.ErrMsg)
+			return nil, fmt.Errorf("%w", statusResp.ErrMsg)
 		}
 		// Otherwise, this appears to be an invalid response.
 		return nil, fmt.Errorf("unexpected response type")
@@ -146,45 +150,51 @@ func (c *Client) ReadResp(expectedRespType uint8) (sdipacket.Packet, error) {
 func (c *Client) SendInit() (*sdifxp.Version, error) {
 	initPkt := sdifxp.Init{Version: ClientVer}
 	rawInitPkt := sdipacket.MakeRawPacket(&initPkt)
-	c.w.Write(rawInitPkt.Marshal())
+	if _, err := c.w.Write(rawInitPkt.Marshal()); err != nil {
+		return nil, fmt.Errorf("failed init: %w", err)
+	}
 	resp, err := c.ReadResp(sdifxp.TypeCodeVersion)
 	if err != nil {
-		return nil, fmt.Errorf("failed init: %v", err)
+		return nil, fmt.Errorf("failed init: %w", err)
 	}
 	if versionResp, ok := resp.(*sdifxp.Version); ok {
 		return versionResp, nil
 	}
-	panic(fmt.Errorf("failed init: invalid response processed"))
+	return nil, fmt.Errorf("failed init: invalid response processed")
 }
 
 // SendOpen sends an open filename request to the server and returns a Handle and an error.
 func (c *Client) SendOpen(filename string, flags int) (*sdifxp.Handle, error) {
 	openPkt := sdifxp.Open{ID: reqID, Filename: filename, Flags: uint32(flags)}
 	rawOpenPkt := sdipacket.MakeRawPacket(&openPkt)
-	c.w.Write(rawOpenPkt.Marshal())
+	if _, err := c.w.Write(rawOpenPkt.Marshal()); err != nil {
+		return nil, fmt.Errorf("failed open: %w", err)
+	}
 	resp, err := c.ReadResp(sdifxp.TypeCodeHandle)
 	if err != nil {
-		return nil, fmt.Errorf("failed open: %v", err)
+		return nil, fmt.Errorf("failed open: %w", err)
 	}
 	if openResp, ok := resp.(*sdifxp.Handle); ok {
 		return openResp, nil
 	}
-	panic(fmt.Errorf("failed open: invalid response processed"))
+	return nil, fmt.Errorf("failed open: invalid response processed")
 }
 
 // SendWrite sends a write request to the server, asking to write data at offset to the
 // specified handle.  A Status and an error are returned.
-func (c *Client) SendWrite(handle string, offset uint64, data *[]byte) (*sdifxp.Status, error) {
-	writePkt := sdifxp.Write{ID: reqID, Handle: handle, Offset: offset, Data: string(*data)}
+func (c *Client) SendWrite(handle string, offset uint64, data []byte) (*sdifxp.Status, error) {
+	writePkt := sdifxp.Write{ID: reqID, Handle: handle, Offset: offset, Data: string(data)}
 	rawWritePkt := sdipacket.MakeRawPacket(&writePkt)
-	c.w.Write(rawWritePkt.Marshal())
+	if _, err := c.w.Write(rawWritePkt.Marshal()); err != nil {
+		return nil, fmt.Errorf("failed write: %w", err)
+	}
 	resp, err := c.ReadResp(sdifxp.TypeCodeStatus)
 	if err != nil {
-		return nil, fmt.Errorf("failed write: %v", err)
+		return nil, fmt.Errorf("failed write: %w", err)
 	}
 	writeResp, ok := resp.(*sdifxp.Status)
 	if !ok {
-		panic(fmt.Errorf("failed write: invalid response processed"))
+		return nil, fmt.Errorf("failed write: invalid response processed")
 	}
 	if writeResp.ErrCode != SSH_FX_OK {
 		return nil, fmt.Errorf("failed write: %v:", writeResp.ErrMsg)
@@ -198,10 +208,12 @@ func (c *Client) SendWrite(handle string, offset uint64, data *[]byte) (*sdifxp.
 func (c *Client) SendClose(handle string) (*sdifxp.Status, error) {
 	closePkt := sdifxp.Close{ID: reqID, Handle: handle}
 	rawClosePkt := sdipacket.MakeRawPacket(&closePkt)
-	c.w.Write(rawClosePkt.Marshal())
+	if _, err := c.w.Write(rawClosePkt.Marshal()); err != nil {
+		return nil, fmt.Errorf("failed close: %w", err)
+	}
 	resp, err := c.ReadResp(sdifxp.TypeCodeStatus)
 	if err != nil {
-		return nil, fmt.Errorf("failed close: %v", err)
+		return nil, fmt.Errorf("failed close: %w", err)
 	}
 	closeResp := resp.(*sdifxp.Status)
 	if closeResp.ErrCode != SSH_FX_OK {
