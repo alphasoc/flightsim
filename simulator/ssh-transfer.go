@@ -37,29 +37,36 @@ func (s *SSHTransfer) Init(src net.IP) error {
 	return nil
 }
 
-// writeRandom writes toSend bytes of 'random' data to the server.  An error is returned.
-func writeRandom(c *simssh.Client, handle string, toSend uint64, randomGen *rand.Rand) error {
+// writeRandom writes toSend bytes of 'random' data to the server.  The number of bytes
+// sent and an error are returned.
+func writeRandom(c *simssh.Client, handle string, toSend uint64, randomGen *rand.Rand) (uint64, error) {
 	// 8K writes.
-	const buffSize uint64 = 8192
-	var payloadSize, sent, leftToSend, i uint64
+	const buffSize = 8192
+	var totalDataBytesSent, leftToSend, i uint64
+	var payloadSize int
 	bytes := make([]byte, buffSize)
-	for i = 0; sent < toSend; i++ {
-		leftToSend = toSend - sent
+	for i = 0; totalDataBytesSent < toSend; i++ {
+		leftToSend = toSend - totalDataBytesSent
 		if leftToSend >= buffSize {
 			payloadSize = buffSize
 		} else {
-			payloadSize = leftToSend
+			// Safe cast.
+			payloadSize = int(leftToSend)
 		}
 		// Read always returns len(bytes) and a nil error.
 		randomGen.Read(bytes[:payloadSize])
-		// Don't care about the actual response here.  Just the error code.
-		_, err := c.SendWrite(handle, i*buffSize, bytes[:payloadSize])
+		// Care only about the number of bytes to send, number of bytes sent, and the err code.
+		bytesToSend, bytesSent, _, err := c.SendWrite(handle, i*buffSize, bytes[:payloadSize])
 		if err != nil {
-			return fmt.Errorf("failed transfer: %w", err)
+			return totalDataBytesSent, fmt.Errorf("failed transfer: %w", err)
 		}
-		sent += payloadSize
+		pktOverhead := bytesToSend - payloadSize
+		dataBytesSent := bytesSent - pktOverhead
+		if dataBytesSent > 0 {
+			totalDataBytesSent += uint64(dataBytesSent)
+		}
 	}
-	return nil
+	return totalDataBytesSent, nil
 }
 
 // Simulate an ssh/sftp file transfer.
@@ -94,9 +101,16 @@ func (s *SSHTransfer) Simulate(ctx context.Context, dst string) error {
 	}
 	handle := openResp.Handle
 	// Write s.sendSize bytes, checking for any write errors.
-	err = writeRandom(c, handle, uint64(s.sendSize), s.randomGen)
+	bytesSent, err := writeRandom(c, handle, uint64(s.sendSize), s.randomGen)
+	bytesizeBytesSent := bytesize.ByteSize(bytesSent)
 	if err != nil {
-		return err
+		// Don't append ':" to leading '%v' as composed err already has trailing ':'.
+		return fmt.Errorf(
+			"%v [%v (%v) successfully transferred]",
+			err,
+			bytesizeBytesSent.Format("%.0f", "B", false),
+			bytesizeBytesSent.Format("%.2f", "", false),
+		)
 	}
 	// Close the handle.  We don't care about the response, just the error.
 	_, err = c.SendClose(handle)
