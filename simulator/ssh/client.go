@@ -181,26 +181,29 @@ func (c *Client) SendOpen(filename string, flags int) (*sdifxp.Handle, error) {
 }
 
 // SendWrite sends a write request to the server, asking to write data at offset to the
-// specified handle.  A Status and an error are returned.
-func (c *Client) SendWrite(handle string, offset uint64, data []byte) (*sdifxp.Status, error) {
+// specified handle.  The number of bytes to send, number of bytes sent, a Status and
+// an error are returned.
+func (c *Client) SendWrite(handle string, offset uint64, data []byte) (int, int, *sdifxp.Status, error) {
 	writePkt := sdifxp.Write{ID: reqID, Handle: handle, Offset: offset, Data: string(data)}
 	rawWritePkt := sdipacket.MakeRawPacket(&writePkt)
-	if _, err := c.w.Write(rawWritePkt.Marshal()); err != nil {
-		return nil, fmt.Errorf("failed write: %w", err)
+	rawWritePktBytes := rawWritePkt.Marshal()
+	rawWritePktBytesLen := len(rawWritePktBytes)
+	bytesSent, err := c.w.Write(rawWritePktBytes)
+	if err != nil {
+		return rawWritePktBytesLen, bytesSent, nil, fmt.Errorf("failed write: %w", err)
 	}
 	resp, err := c.ReadResp(sdifxp.TypeCodeStatus)
 	if err != nil {
-		return nil, fmt.Errorf("failed write: %w", err)
+		return rawWritePktBytesLen, bytesSent, nil, fmt.Errorf("failed write: %w", err)
 	}
 	writeResp, ok := resp.(*sdifxp.Status)
 	if !ok {
-		return nil, fmt.Errorf("failed write: invalid response processed")
+		return rawWritePktBytesLen, bytesSent, nil, fmt.Errorf("failed write: invalid response processed")
 	}
 	if writeResp.ErrCode != SSH_FX_OK {
-		return nil, fmt.Errorf("failed write: %v:", writeResp.ErrMsg)
+		return rawWritePktBytesLen, bytesSent, nil, fmt.Errorf("failed write: %v:", writeResp.ErrMsg)
 	}
-	return writeResp, nil
-
+	return rawWritePktBytesLen, bytesSent, writeResp, nil
 }
 
 // SendClose sends a close file/handle request to the server.  A Status and an error are
