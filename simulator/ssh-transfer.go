@@ -30,6 +30,16 @@ func NewSSHTransfer() *SSHTransfer {
 	return &SSHTransfer{}
 }
 
+// HostMsg implements the HostMsgFormatter interface, returning a custom host message
+// string to be output by the run command.
+func (s *SSHTransfer) HostMsg(host string) string {
+	return fmt.Sprintf(
+		"Simulating an SSH/SFTP file transfer of %v (%v) to %v",
+		s.sendSize.Format("%.0f", "B", false),
+		s.sendSize.Format("%.2f", "", false),
+		host)
+}
+
 // Init sets the source IP for this simulation.
 func (s *SSHTransfer) Init(src net.IP) error {
 	s.src = src

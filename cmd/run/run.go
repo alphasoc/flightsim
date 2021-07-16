@@ -152,7 +152,10 @@ func (m *Module) FormatHost(host string) string {
 			host = h
 		}
 	}
-
+	// Check if the simulator module implements the HostMsgFormatter interface.
+	if hostMsgFormatter, ok := m.Module.(simulator.HostMsgFormatter); ok {
+		return hostMsgFormatter.HostMsg(host)
+	}
 	f := m.HostMsg
 	if f == "" {
 		switch m.Pipeline {
@@ -285,7 +288,6 @@ var allModules = []Module{
 		Name:       "ssh-transfer",
 		Pipeline:   PipelineIP,
 		NumOfHosts: 2,
-		HostMsg:    "Simulating an SSH/SFTP file transfer to %s",
 		HeaderMsg:  "Preparing to send a randomly generated file",
 		Timeout:    5 * time.Minute,
 		Fast:       true,
