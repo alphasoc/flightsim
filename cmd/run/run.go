@@ -140,6 +140,9 @@ type Module struct {
 	Timeout      time.Duration
 	// FailMsg    string
 	SuccessMsg string
+	// False by default.  If true, don't wait until Timeout between simulation
+	// runs of this module.
+	Fast bool
 }
 
 func (m *Module) FormatHost(host string) string {
@@ -277,6 +280,7 @@ var allModules = []Module{
 		HostMsg:    "Simulating an SSH/SFTP file transfer to %s",
 		HeaderMsg:  "Preparing to send a randomly generated file",
 		Timeout:    5 * time.Minute,
+		Fast:       true,
 	},
 }
 
@@ -345,8 +349,9 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 							okHosts++
 						}
 
-						// wait until context expires (unless fast mode or very last iteration)
-						if !fast && ((simN < len(sims)-1) || (hostN < len(hosts)-1)) {
+						// Wait until context expires, unless fast global mode,
+						// fast module (default false) or very last iteration.
+						if !(fast || sim.Fast) && ((simN < len(sims)-1) || (hostN < len(hosts)-1)) {
 							<-ctx.Done()
 						}
 
