@@ -126,7 +126,7 @@ func (c *Client) ReadResp(expectedRespType uint8) (sdipacket.Packet, error) {
 		// along with a nil sdipacket.Packet.  We could add some additional error prefix
 		// to the message, but it's becoming crowded with little added informational value.
 		if statusResp.ErrCode != SSH_FX_OK {
-			return nil, fmt.Errorf("%w", statusResp.ErrMsg)
+			return nil, fmt.Errorf("%v", statusResp.ErrMsg)
 		}
 		// Otherwise, this appears to be an invalid response.
 		return nil, fmt.Errorf("unexpected response type")

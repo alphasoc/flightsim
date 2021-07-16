@@ -154,13 +154,13 @@ func parseScope(scope string) ([]string, bytesize.ByteSize, error) {
 		if err != nil {
 			return []string{""},
 				bytesize.ByteSize(0),
-				fmt.Errorf("invalid command line: %w", err)
+				fmt.Errorf("invalid command line: '%v': %w", scope, err)
 		}
 		return defaultTargetHosts, sendSize, nil
 	}
 	// TODO scope may contain more information, separated by ":", perhaps as key-value
 	// pairs.  For now, not supported.
-	return []string{""}, bytesize.ByteSize(0), fmt.Errorf("invalid command line: %v", scope)
+	return []string{""}, bytesize.ByteSize(0), fmt.Errorf("invalid command line: '%v'", scope)
 }
 
 // Hosts sets the simulation send size, and extracts the destination hosts.  A slice of
