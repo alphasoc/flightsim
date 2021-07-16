@@ -9,6 +9,12 @@ import (
 	"github.com/alphasoc/flightsim/utils"
 )
 
+// HostMsgFormatter allows a simulator to implement a custom HostMsg method to be called in
+// place of parsing the Module.HostMsg field.
+type HostMsgFormatter interface {
+	HostMsg(host string) string
+}
+
 type Simulator interface {
 	Init(bind net.IP) error
 	Simulate(ctx context.Context, host string) error
