@@ -9,17 +9,12 @@ import (
 	"net"
 	"time"
 
-	sdipacket "github.com/alphasoc/sftp-data-input/packet"
-	sdifxp "github.com/alphasoc/sftp-data-input/packet/fxp"
-
+	"github.com/alphasoc/flightsim/simulator/ssh/fxp"
 	"golang.org/x/crypto/ssh"
 )
 
 // SSH/SFTP client version.  We don't perform any version negotiation.
 const ClientVer = 3
-
-// Only SSH_FX_OK error code is needed for our purposes.
-const SSH_FX_OK = 0
 
 // SSH/SFTP requests require an ID.  Per
 // https://datatracker.ietf.org/doc/html/draft-ietf-secsh-filexfer-13#section-4, they
@@ -101,7 +96,7 @@ func (c *Client) Teardown() {
 // interface is returned along with an error.  The returned structure will either match
 // the expectedRespType, or will be nil with an error.  If expectedRespType is a status,
 // the caller is expected to check if the status is carrying an error.
-func (c *Client) ReadResp(expectedRespType uint8) (sdipacket.Packet, error) {
+func (c *Client) ReadResp(expectedRespType uint8) (Packet, error) {
 	resp, err := ReadPacket(c.r)
 	if err != nil {
 		return nil, err
@@ -111,7 +106,7 @@ func (c *Client) ReadResp(expectedRespType uint8) (sdipacket.Packet, error) {
 	respData := resp[1:]
 	// Handle status packets first, regardless whether that's the expected response, as
 	// they may signal an error.
-	if respType == sdifxp.TypeCodeStatus {
+	if respType == fxp.TypeCodeStatus {
 		// Unmarshalling may fail.
 		statusResp, err := StatusResp(respData)
 		if err != nil {
@@ -123,9 +118,9 @@ func (c *Client) ReadResp(expectedRespType uint8) (sdipacket.Packet, error) {
 			return statusResp, nil
 		}
 		// Otherwise, check to see if the status response carries an error, and return it
-		// along with a nil sdipacket.Packet.  We could add some additional error prefix
+		// along with a nil Packet.  We could add some additional error prefix
 		// to the message, but it's becoming crowded with little added informational value.
-		if statusResp.ErrCode != SSH_FX_OK {
+		if statusResp.ErrCode != fxp.SSH_FX_OK {
 			return nil, fmt.Errorf("%v", statusResp.ErrMsg)
 		}
 		// Otherwise, this appears to be an invalid response.
@@ -137,9 +132,9 @@ func (c *Client) ReadResp(expectedRespType uint8) (sdipacket.Packet, error) {
 		return nil, fmt.Errorf("unexpected response type")
 	}
 	switch respType {
-	case sdifxp.TypeCodeVersion:
+	case fxp.TypeCodeVersion:
 		return VersionResp(respData)
-	case sdifxp.TypeCodeHandle:
+	case fxp.TypeCodeHandle:
 		return OpenResp(respData)
 	default:
 		return nil, fmt.Errorf("unsupported response type")
@@ -147,34 +142,34 @@ func (c *Client) ReadResp(expectedRespType uint8) (sdipacket.Packet, error) {
 }
 
 // SendInit sends an init request to the server, returning a Version and an error.
-func (c *Client) SendInit() (*sdifxp.Version, error) {
-	initPkt := sdifxp.Init{Version: ClientVer}
-	rawInitPkt := sdipacket.MakeRawPacket(&initPkt)
+func (c *Client) SendInit() (*fxp.Version, error) {
+	initPkt := fxp.Init{Version: ClientVer}
+	rawInitPkt := MakeRawPacket(&initPkt)
 	if _, err := c.w.Write(rawInitPkt.Marshal()); err != nil {
 		return nil, fmt.Errorf("failed init: %w", err)
 	}
-	resp, err := c.ReadResp(sdifxp.TypeCodeVersion)
+	resp, err := c.ReadResp(fxp.TypeCodeVersion)
 	if err != nil {
 		return nil, fmt.Errorf("failed init: %w", err)
 	}
-	if versionResp, ok := resp.(*sdifxp.Version); ok {
+	if versionResp, ok := resp.(*fxp.Version); ok {
 		return versionResp, nil
 	}
 	return nil, fmt.Errorf("failed init: invalid response processed")
 }
 
 // SendOpen sends an open filename request to the server and returns a Handle and an error.
-func (c *Client) SendOpen(filename string, flags int) (*sdifxp.Handle, error) {
-	openPkt := sdifxp.Open{ID: reqID, Filename: filename, Flags: uint32(flags)}
-	rawOpenPkt := sdipacket.MakeRawPacket(&openPkt)
+func (c *Client) SendOpen(filename string, flags int) (*fxp.Handle, error) {
+	openPkt := fxp.Open{ID: reqID, Filename: filename, Flags: uint32(flags)}
+	rawOpenPkt := MakeRawPacket(&openPkt)
 	if _, err := c.w.Write(rawOpenPkt.Marshal()); err != nil {
 		return nil, fmt.Errorf("failed open: %w", err)
 	}
-	resp, err := c.ReadResp(sdifxp.TypeCodeHandle)
+	resp, err := c.ReadResp(fxp.TypeCodeHandle)
 	if err != nil {
 		return nil, fmt.Errorf("failed open: %w", err)
 	}
-	if openResp, ok := resp.(*sdifxp.Handle); ok {
+	if openResp, ok := resp.(*fxp.Handle); ok {
 		return openResp, nil
 	}
 	return nil, fmt.Errorf("failed open: invalid response processed")
@@ -183,24 +178,24 @@ func (c *Client) SendOpen(filename string, flags int) (*sdifxp.Handle, error) {
 // SendWrite sends a write request to the server, asking to write data at offset to the
 // specified handle.  The number of bytes to send, number of bytes sent, a Status and
 // an error are returned.
-func (c *Client) SendWrite(handle string, offset uint64, data []byte) (int, int, *sdifxp.Status, error) {
-	writePkt := sdifxp.Write{ID: reqID, Handle: handle, Offset: offset, Data: string(data)}
-	rawWritePkt := sdipacket.MakeRawPacket(&writePkt)
+func (c *Client) SendWrite(handle string, offset uint64, data []byte) (int, int, *fxp.Status, error) {
+	writePkt := fxp.Write{ID: reqID, Handle: handle, Offset: offset, Data: string(data)}
+	rawWritePkt := MakeRawPacket(&writePkt)
 	rawWritePktBytes := rawWritePkt.Marshal()
 	rawWritePktBytesLen := len(rawWritePktBytes)
 	bytesSent, err := c.w.Write(rawWritePktBytes)
 	if err != nil {
 		return rawWritePktBytesLen, bytesSent, nil, fmt.Errorf("failed write: %w", err)
 	}
-	resp, err := c.ReadResp(sdifxp.TypeCodeStatus)
+	resp, err := c.ReadResp(fxp.TypeCodeStatus)
 	if err != nil {
 		return rawWritePktBytesLen, bytesSent, nil, fmt.Errorf("failed write: %w", err)
 	}
-	writeResp, ok := resp.(*sdifxp.Status)
+	writeResp, ok := resp.(*fxp.Status)
 	if !ok {
 		return rawWritePktBytesLen, bytesSent, nil, fmt.Errorf("failed write: invalid response processed")
 	}
-	if writeResp.ErrCode != SSH_FX_OK {
+	if writeResp.ErrCode != fxp.SSH_FX_OK {
 		return rawWritePktBytesLen, bytesSent, nil, fmt.Errorf("failed write: %v:", writeResp.ErrMsg)
 	}
 	return rawWritePktBytesLen, bytesSent, writeResp, nil
@@ -208,18 +203,21 @@ func (c *Client) SendWrite(handle string, offset uint64, data []byte) (int, int,
 
 // SendClose sends a close file/handle request to the server.  A Status and an error are
 // returned.
-func (c *Client) SendClose(handle string) (*sdifxp.Status, error) {
-	closePkt := sdifxp.Close{ID: reqID, Handle: handle}
-	rawClosePkt := sdipacket.MakeRawPacket(&closePkt)
+func (c *Client) SendClose(handle string) (*fxp.Status, error) {
+	closePkt := fxp.Close{ID: reqID, Handle: handle}
+	rawClosePkt := MakeRawPacket(&closePkt)
 	if _, err := c.w.Write(rawClosePkt.Marshal()); err != nil {
 		return nil, fmt.Errorf("failed close: %w", err)
 	}
-	resp, err := c.ReadResp(sdifxp.TypeCodeStatus)
+	resp, err := c.ReadResp(fxp.TypeCodeStatus)
 	if err != nil {
 		return nil, fmt.Errorf("failed close: %w", err)
 	}
-	closeResp := resp.(*sdifxp.Status)
-	if closeResp.ErrCode != SSH_FX_OK {
+	closeResp, ok := resp.(*fxp.Status)
+	if !ok {
+		return nil, fmt.Errorf("failed close: invalid response processed")
+	}
+	if closeResp.ErrCode != fxp.SSH_FX_OK {
 		return nil, fmt.Errorf("failed close: %v:", closeResp.ErrMsg)
 	}
 	return closeResp, nil
