@@ -1,0 +1,64 @@
+builds:
+  # You can have multiple builds defined as a yaml list.
+  -
+    goos:
+      - linux
+      - freebsd
+      - darwin
+      - windows
+    # GOARCH to build for.
+    # For more info refer to: https://golang.org/doc/install/source#environment
+    # Defaults are 386, amd64 and arm64.
+    goarch:
+      - amd64
+
+nfpms:
+  # note that this is an array of nfpm configs
+  -
+    # Replacements for GOOS and GOARCH in the package name.
+    # Keys should be valid GOOSs or GOARCHs.
+    # Values are the respective replacements.
+    # Default is empty.
+    replacements:
+      amd64: 64-bit
+      darwin: macOS
+    vendor: alphasoc
+    homepage: https://alphasoc.com/
+    maintainer: AlphaSOC <support@alphasoc.com>
+    description: A lightweight utility used to generate malicious network traffic and help
+                 security teams to evaluate security controls and network visibility.
+    license: CCPL
+    # Formats to be generated.
+    formats:
+      - deb
+      - rpm
+      - apk
+
+release:
+  # If set to auto, will mark the release as not ready for production
+  # in case there is an indicator for this in the tag e.g. v1.0.0-rc1
+  # If set to true, will mark the release as not ready for production.
+  # Default is false.
+  prerelease: auto
+  # If set to true, will not auto-publish the release.
+  # Default is false.
+  draft: true
+  # Header template for the release body.
+  header: |
+    ## Flightsim Release - {{ time "2006-02-01" }}
+
+    Welcome to this new release!
+
+  # Footer template for the release body.
+  footer: |
+    ## Enjoy!
+
+    Those were the changes on {{ .Tag }}!
+
+  # You can change the name of the release.
+  # Default is `{{.Tag}}` on OSS and `{{.PrefixedTag}}` on Pro.
+  name_template: "{{.ProjectName}}-v{{.Version}}"
+
+# Sign all artifacts.
+signs:
+  - artifacts: all

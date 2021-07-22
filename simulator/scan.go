@@ -109,7 +109,8 @@ func (s *PortScan) Simulate(ctx context.Context, dst string) error {
 	// TODO: allow for multiple connection in parallel and hence a longer deadline
 
 	for _, port := range scanPorts {
-		ctx, _ := context.WithTimeout(ctx, callTimeout)
+		ctx, cancelFn := context.WithTimeout(ctx, callTimeout)
+		defer cancelFn()
 		err := s.tcp.Simulate(ctx, fmt.Sprintf("%s:%d", dst, port))
 		if err != nil {
 			return err
