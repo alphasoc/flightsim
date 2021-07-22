@@ -16,7 +16,7 @@ import (
 
 const defaultSendSize = 100 * bytesize.MB
 
-var defaultTargetHosts = []string{"sandbox.alphasoc.xyz:22", "sandbox.alphasoc.xyz:9999"}
+var defaultTargetHosts = []string{"sandbox.alphasoc.xyz:22"}
 
 // SSHTransfer defines this simulation.
 type SSHTransfer struct {

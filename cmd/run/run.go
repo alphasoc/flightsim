@@ -287,7 +287,7 @@ var allModules = []Module{
 		Module:     simulator.NewSSHTransfer(),
 		Name:       "ssh-transfer",
 		Pipeline:   PipelineIP,
-		NumOfHosts: 2,
+		NumOfHosts: 1,
 		HeaderMsg:  "Preparing to send a randomly generated file",
 		Timeout:    5 * time.Minute,
 		Fast:       true,
