@@ -50,7 +50,8 @@ func (s *Tunnel) Simulate(ctx context.Context, host string) error {
 
 		label := strings.ToLower(utils.RandString(30))
 
-		ctx, _ := context.WithTimeout(ctx, 200*time.Millisecond)
+		ctx, cancelFn := context.WithTimeout(ctx, 200*time.Millisecond)
+		defer cancelFn()
 		_, err := r.LookupTXT(ctx, fmt.Sprintf("%s.%s", label, host))
 
 		// ignore timeout and "no such host"
@@ -61,8 +62,6 @@ func (s *Tunnel) Simulate(ctx context.Context, host string) error {
 		// wait until context expires so we don't flood
 		<-ctx.Done()
 	}
-
-	return nil
 }
 
 // Hosts returns random generated hosts to alphasoc sandbox.
