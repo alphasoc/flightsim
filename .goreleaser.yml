@@ -45,7 +45,7 @@ release:
   draft: true
   # Header template for the release body.
   header: |
-    ## Flightsim Release - {{ time "2006-02-01" }}
+    ## Network Flight Simulator v{{.Version}} ({{ time "2006-02-01" }})
 
     Welcome to this new release!
 
