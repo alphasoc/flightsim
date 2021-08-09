@@ -11,6 +11,8 @@ builds:
     # Defaults are 386, amd64 and arm64.
     goarch:
       - amd64
+    ldflags:
+      - -X main.Version={{ .Version }}
 
 nfpms:
   # note that this is an array of nfpm configs
