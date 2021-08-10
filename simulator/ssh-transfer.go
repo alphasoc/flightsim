@@ -6,17 +6,12 @@ import (
 	"math/rand"
 	"net"
 	"os"
-	"strings"
 	"time"
 
 	simssh "github.com/alphasoc/flightsim/simulator/ssh"
 
 	bytesize "github.com/inhies/go-bytesize"
 )
-
-const defaultSendSize = 100 * bytesize.MB
-
-var defaultTargetHosts = []string{"sandbox.alphasoc.xyz:22"}
 
 // SSHTransfer defines this simulation.
 type SSHTransfer struct {
@@ -28,6 +23,16 @@ type SSHTransfer struct {
 // NewSSHTransfer creates a new SSH/SFTP simulator.
 func NewSSHTransfer() *SSHTransfer {
 	return &SSHTransfer{}
+}
+
+// defaultSendSize returns a 100 bytesize.MB default.
+func (s *SSHTransfer) defaultSendSize() bytesize.ByteSize {
+	return 100 * bytesize.MB
+}
+
+// defualtTargetHosts returns a default string slice of targets in the {HOST:IP} form.
+func (s *SSHTransfer) defaultTargetHosts() []string {
+	return []string{"sandbox.alphasoc.xyz:22"}
 }
 
 // HostMsg implements the HostMsgFormatter interface, returning a custom host message
@@ -134,39 +139,10 @@ func (s *SSHTransfer) Simulate(ctx context.Context, dst string) error {
 // Cleanup is a no-op.
 func (s *SSHTransfer) Cleanup() {}
 
-// parseScope parses the commandline portion (if supplied) after the module name.
-//   ie. flightsim run ssh-transfer:this-part-is-scope:and-can-contain-more
-// For the moment, only send size is parsed, but ultimately we also want to pass
-// destination host and port.  Returns a string representation of the destination
-// host (currently ""), the send size as a ByteSize, and an error.
-func parseScope(scope string) ([]string, bytesize.ByteSize, error) {
-
-	// scope can be "", in which case, apply defaults.
-	if scope == "" {
-		return defaultTargetHosts, defaultSendSize, nil
-	}
-	// scope may contain just the send size (ie. a lack of futher ":" separators
-	// present in the string).
-	var sendSize bytesize.ByteSize
-	var err error
-	if !strings.Contains(scope, ":") {
-		sendSize, err = bytesize.Parse(scope)
-		if err != nil {
-			return []string{""},
-				bytesize.ByteSize(0),
-				fmt.Errorf("invalid command line: '%v': %w", scope, err)
-		}
-		return defaultTargetHosts, sendSize, nil
-	}
-	// TODO scope may contain more information, separated by ":", perhaps as key-value
-	// pairs.  For now, not supported.
-	return []string{""}, bytesize.ByteSize(0), fmt.Errorf("invalid command line: '%v'", scope)
-}
-
 // Hosts sets the simulation send size, and extracts the destination hosts.  A slice of
 // strings representing the destination hosts (IP:port) is returned along with an error.
 func (s *SSHTransfer) Hosts(scope string, size int) ([]string, error) {
-	dstHosts, sendSize, err := parseScope(scope)
+	dstHosts, sendSize, err := simssh.ParseScope(scope, s.defaultTargetHosts(), s.defaultSendSize())
 	if err != nil {
 		return dstHosts, err
 	}
