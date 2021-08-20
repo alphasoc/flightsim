@@ -48,7 +48,8 @@ func (s *ICMPtunnel) Cleanup() {
 
 //Hosts returns host used for tunneling
 func (ICMPtunnel) Hosts(scope string, size int) ([]string, error) {
-	return []string{"35.237.9.45"}, nil
+	// 104.197.57.232 == sandbox.alphasoc.xyz
+	return []string{"104.197.57.232"}, nil
 }
 
 //Simulate IMCP tunneling for given dst
