@@ -200,7 +200,7 @@ var allModules = []Module{
 	// 	Pipeline:   PipelineDNS,
 	// 	NumOfHosts: 1,
 	// 	HeaderMsg:  "",
-	// 	HostMsg:    "Resolving %s via ns1.sandbox.alphasoc.xyz",
+	// 	HostMsg:    "Resolving %s via dns.sandbox-services.alphasoc.xyz",
 	// 	Timeout:    1 * time.Second,
 	// 	// FailMsg:    "Test failed (queries to arbitrary DNS servers are blocked)",
 	// 	SuccessMsg: "Success! DNS hijacking is possible in this environment",

@@ -32,7 +32,7 @@ func (s *SSHTransfer) defaultSendSize() bytesize.ByteSize {
 
 // defualtTargetHosts returns a default string slice of targets in the {HOST:IP} form.
 func (s *SSHTransfer) defaultTargetHosts() []string {
-	return []string{"ssh.sandbox.alphasoc.xyz:22"}
+	return []string{"ssh.sandbox-services.alphasoc.xyz:22"}
 }
 
 // HostMsg implements the HostMsgFormatter interface, returning a custom host message

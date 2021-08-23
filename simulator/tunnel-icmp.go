@@ -48,8 +48,27 @@ func (s *ICMPtunnel) Cleanup() {
 
 //Hosts returns host used for tunneling
 func (ICMPtunnel) Hosts(scope string, size int) ([]string, error) {
-	// 104.197.57.232 == sandbox.alphasoc.xyz
-	return []string{"104.197.57.232"}, nil
+	return []string{"icmp.sandbox-services.alphasoc.xyz"}, nil
+}
+
+// hostnameToIPv4 does a hostname lookup of host and tries to return the first valid IPv4
+// address.  An error is returned on failure.
+func hostnameToIPv4(host string) (net.IP, error) {
+	ipArr, err := net.LookupIP(host)
+	if err != nil {
+		return nil, err
+	}
+	// Find the first valid IPv4 address and use it.
+	var ipOfDst net.IP
+	for _, ip := range ipArr {
+		if ipOfDst = ip.To4(); ipOfDst != nil {
+			break
+		}
+	}
+	if ipOfDst == nil {
+		return nil, fmt.Errorf("unable to resolve '%s' to a valid IPv4 address", host)
+	}
+	return ipOfDst, nil
 }
 
 //Simulate IMCP tunneling for given dst
@@ -73,7 +92,11 @@ func (s *ICMPtunnel) Simulate(ctx context.Context, dst string) error {
 		if err != nil {
 			return err
 		}
-		if _, err := s.c.WriteTo(binmsg, &net.IPAddr{IP: net.ParseIP(dst)}); err != nil {
+		ipAddr, err := hostnameToIPv4(dst)
+		if err != nil {
+			return err
+		}
+		if _, err := s.c.WriteTo(binmsg, &net.IPAddr{IP: net.ParseIP(ipAddr.String())}); err != nil {
 			return err
 		}
 
