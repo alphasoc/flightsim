@@ -2,6 +2,7 @@ package simulator
 
 import (
 	"fmt"
+	"math/rand"
 
 	simssh "github.com/alphasoc/flightsim/simulator/ssh"
 	bytesize "github.com/inhies/go-bytesize"
@@ -22,7 +23,7 @@ func NewSSHExfil() *SSHExfil {
 func (s *SSHExfil) defaultTargetHosts() []string {
 	// Ports to be used for ssh exfil detectability.
 	ports := []string{"443", "465", "587", "993", "995"}
-	pos := s.randomGen.Intn(len(ports))
+	pos := rand.Intn(len(ports))
 	return []string{fmt.Sprintf("ssh.sandbox-services.alphasoc.xyz:%v", ports[pos])}
 }
 

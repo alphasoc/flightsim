@@ -6,10 +6,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math/rand"
 	"net"
+	"os"
 	"time"
 
 	"github.com/alphasoc/flightsim/simulator/ssh/fxp"
+	"github.com/inhies/go-bytesize"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -22,12 +25,22 @@ const ClientVer = 3
 // 1 is just fine.
 const reqID = 1
 
-// Client wraps SSH client and session structs.
+// Client wraps SSH client and session structs, read/writers and a random number generator.
 type Client struct {
+	Name      string
 	sshClient *ssh.Client
 	sess      *ssh.Session
 	w         io.WriteCloser
 	r         io.Reader
+	randomGen *rand.Rand
+}
+
+// Used for channel communication, signalling write success/failures.
+type WriteResponse struct {
+	ClientName string
+	BytesSent  bytesize.ByteSize
+	Handle     string
+	Err        error
 }
 
 // NewClient initializes and returns a Client ready to be used for SSH/SFTP transfer along
@@ -81,7 +94,7 @@ func NewClient(ctx context.Context, user string, src net.IP, dst string, signer 
 		sshClient.Close()
 		return nil, fmt.Errorf("failed initializing SFTP IO: %w", err)
 	}
-	return &Client{sshClient, sess, w, r}, nil
+	return &Client{user, sshClient, sess, w, r, rand.New(rand.NewSource(time.Now().UnixNano()))}, nil
 }
 
 // Teardown closes the underlying SSH client and session.
@@ -98,6 +111,8 @@ func (c *Client) Teardown() {
 // the caller is expected to check if the status is carrying an error.
 func (c *Client) ReadResp(expectedRespType uint8) (Packet, error) {
 	resp, err := ReadPacket(c.r)
+	// ReadPacket could return a partial response (ErrUnexpectedEOF), but that's of no
+	// help here.
 	if err != nil {
 		return nil, err
 	}
@@ -167,6 +182,7 @@ func (c *Client) SendOpen(filename string, flags int) (*fxp.Handle, error) {
 	}
 	resp, err := c.ReadResp(fxp.TypeCodeHandle)
 	if err != nil {
+		fmt.Printf("filename: %v\n", filename)
 		return nil, fmt.Errorf("failed open: %w", err)
 	}
 	if openResp, ok := resp.(*fxp.Handle); ok {
@@ -178,27 +194,28 @@ func (c *Client) SendOpen(filename string, flags int) (*fxp.Handle, error) {
 // SendWrite sends a write request to the server, asking to write data at offset to the
 // specified handle.  The number of bytes to send, number of bytes sent, a Status and
 // an error are returned.
-func (c *Client) SendWrite(handle string, offset uint64, data []byte) (int, int, *fxp.Status, error) {
+func (c *Client) SendWrite(handle string, offset uint64, data []byte) (bytesize.ByteSize, bytesize.ByteSize, *fxp.Status, error) {
 	writePkt := fxp.Write{ID: reqID, Handle: handle, Offset: offset, Data: string(data)}
 	rawWritePkt := MakeRawPacket(&writePkt)
 	rawWritePktBytes := rawWritePkt.Marshal()
-	rawWritePktBytesLen := len(rawWritePktBytes)
+	rawWritePktBytesLen := bytesize.ByteSize(len(rawWritePktBytes))
 	bytesSent, err := c.w.Write(rawWritePktBytes)
+	bytesizeBytesSent := bytesize.ByteSize(bytesSent)
 	if err != nil {
-		return rawWritePktBytesLen, bytesSent, nil, fmt.Errorf("failed write: %w", err)
+		return rawWritePktBytesLen, bytesizeBytesSent, nil, fmt.Errorf("failed write: %w", err)
 	}
 	resp, err := c.ReadResp(fxp.TypeCodeStatus)
 	if err != nil {
-		return rawWritePktBytesLen, bytesSent, nil, fmt.Errorf("failed write: %w", err)
+		return rawWritePktBytesLen, bytesizeBytesSent, nil, fmt.Errorf("failed write: failed reading response: %w", err)
 	}
 	writeResp, ok := resp.(*fxp.Status)
 	if !ok {
-		return rawWritePktBytesLen, bytesSent, nil, fmt.Errorf("failed write: invalid response processed")
+		return rawWritePktBytesLen, bytesizeBytesSent, nil, fmt.Errorf("failed write: invalid response processed")
 	}
 	if writeResp.ErrCode != fxp.SSH_FX_OK {
-		return rawWritePktBytesLen, bytesSent, nil, fmt.Errorf("failed write: %v:", writeResp.ErrMsg)
+		return rawWritePktBytesLen, bytesizeBytesSent, nil, fmt.Errorf("failed write: %v:", writeResp.ErrMsg)
 	}
-	return rawWritePktBytesLen, bytesSent, writeResp, nil
+	return rawWritePktBytesLen, bytesizeBytesSent, writeResp, nil
 }
 
 // SendClose sends a close file/handle request to the server.  A Status and an error are
@@ -221,4 +238,47 @@ func (c *Client) SendClose(handle string) (*fxp.Status, error) {
 		return nil, fmt.Errorf("failed close: %v:", closeResp.ErrMsg)
 	}
 	return closeResp, nil
+}
+
+// writeRandom writes toSend bytes of 'random' data to the server.  A WriteResponse is created
+// and sent down the channel ch.
+func (c *Client) WriteRandom(handleStr string, toSend bytesize.ByteSize, ch chan<- WriteResponse) {
+	// First, send an open request.
+	openResp, err := c.SendOpen(handleStr, os.O_CREATE)
+	if err != nil {
+		ch <- WriteResponse{c.Name, 0, "", err}
+		return
+	}
+	handle := openResp.Handle
+	// 1MB writes.
+	const buffSize = 1024 * 1024
+	var totalDataBytesSent, leftToSend bytesize.ByteSize
+	var payloadSize bytesize.ByteSize
+	bytes := make([]byte, buffSize)
+	var i uint64
+	for i = 0; totalDataBytesSent < toSend; i++ {
+		leftToSend = toSend - totalDataBytesSent
+		if leftToSend >= buffSize {
+			payloadSize = buffSize
+		} else {
+			// Safe cast.
+			payloadSize = leftToSend
+		}
+		// Read always returns len(bytes) and a nil error.
+		c.randomGen.Read(bytes[:payloadSize])
+		// Care only about the number of bytes to send, number of bytes sent, and the err code.
+		bytesToSend, bytesSent, _, err := c.SendWrite(handle, i*buffSize, bytes[:payloadSize])
+		pktOverhead := bytesToSend - payloadSize
+		dataBytesSent := bytesSent - pktOverhead
+		if dataBytesSent > 0 {
+			totalDataBytesSent += dataBytesSent
+		}
+		if err != nil {
+			ch <- WriteResponse{c.Name, totalDataBytesSent, handle, fmt.Errorf("failed transfer: %w", err)}
+			return
+		}
+	}
+	// Close the handle.  We don't care about the response, just the error.
+	_, err = c.SendClose(handle)
+	ch <- WriteResponse{c.Name, totalDataBytesSent, handle, err}
 }
