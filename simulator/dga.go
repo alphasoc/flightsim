@@ -3,6 +3,7 @@ package simulator
 import (
 	"math/rand"
 	"net"
+	"strconv"
 	"strings"
 
 	"github.com/alphasoc/flightsim/utils"
@@ -38,7 +39,9 @@ func (t *DGA) Hosts(scope string, size int) ([]string, error) {
 	labelLen := 7 + rand.Intn(4)
 
 	for i := 0; i < size; i++ {
-		label := strings.ToLower(utils.RandString(labelLen))
+		tmpLabel := strings.ToLower(utils.RandString(labelLen))
+		replaceAt := rand.Intn(labelLen)
+		label := tmpLabel[:replaceAt] + strconv.Itoa(rand.Intn(10)) + tmpLabel[replaceAt+1:]
 		tld := dgaTLDs[tldIdx[rand.Intn(len(tldIdx))]]
 		hosts = append(hosts, label+tld)
 	}
