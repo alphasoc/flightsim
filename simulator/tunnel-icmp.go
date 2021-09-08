@@ -26,7 +26,7 @@ func NewICMPtunnel() *ICMPtunnel {
 	return &ICMPtunnel{}
 }
 
-func (s *ICMPtunnel) Init(bind net.IP) error {
+func (s *ICMPtunnel) Init(bind BindAddr) error {
 	c, err := icmp.ListenPacket("ip4:icmp", bind.String())
 	if err != nil {
 		// check if it's syscall error 1: "operation not permitted"

@@ -21,12 +21,13 @@ func printMsg(s *Simulation, msg string) {
 	fmt.Printf("%s [%s] %s\n", time.Now().Format("15:04:05"), s.Name(), msg)
 }
 
-func printWelcome(ip string) {
+func printWelcome(ip, dnsIntfIP string) {
 	fmt.Printf(`
 AlphaSOC Network Flight Simulator™ %s (https://github.com/alphasoc/flightsim)
-The IP address of the network interface is %s
+The address of the network interface for IP traffic is %s
+The address of the network interface for DNS queries is %s
 The current time is %s
-`, Version, ip, time.Now().Format("02-Jan-06 15:04:05"))
+`, Version, ip, dnsIntfIP, time.Now().Format("02-Jan-06 15:04:05"))
 }
 
 func printGoodbye() {

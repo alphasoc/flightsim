@@ -51,8 +51,8 @@ func (s *SSHTransfer) HostMsg(host string) string {
 }
 
 // Init sets the source IP for this simulation.
-func (s *SSHTransfer) Init(src net.IP) error {
-	s.src = src
+func (s *SSHTransfer) Init(src BindAddr) error {
+	s.src = src.Addr
 	return nil
 }
 

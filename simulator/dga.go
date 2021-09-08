@@ -2,7 +2,6 @@ package simulator
 
 import (
 	"math/rand"
-	"net"
 	"strconv"
 	"strings"
 
@@ -21,7 +20,7 @@ func NewDGA() *DGA {
 	return &DGA{}
 }
 
-func (s *DGA) Init(bind net.IP) error {
+func (s *DGA) Init(bind BindAddr) error {
 	return s.DNSResolveSimulator.Init(bind)
 }
 
