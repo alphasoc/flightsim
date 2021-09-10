@@ -22,7 +22,7 @@ func NewSSHExfil() *SSHExfil {
 // Random selection of a non-standard SSH port is performed.
 func (s *SSHExfil) defaultTargetHosts() []string {
 	// Ports to be used for ssh exfil detectability.
-	ports := []string{"443", "465", "587", "993", "995"}
+	ports := []string{"443", "465", "993", "995"}
 	pos := rand.Intn(len(ports))
 	return []string{fmt.Sprintf("ssh.sandbox-services.alphasoc.xyz:%v", ports[pos])}
 }
