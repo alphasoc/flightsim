@@ -269,6 +269,14 @@ var allModules = []Module{
 		HostMsg:    "Simulating ICMP tunneling via %s",
 		Timeout:    20 * time.Second,
 	},
+	Module{
+		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("imposter", wisdom.HostTypeDNS), new(simulator.DNSResolveSimulator)),
+		Name:       "imposter",
+		Pipeline:   PipelineDNS,
+		NumOfHosts: 5,
+		HeaderMsg:  "Resolving random imposter domains",
+		Timeout:    1 * time.Second,
+	},
 }
 
 type Simulation struct {
