@@ -1,7 +1,13 @@
+github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da h1:KjTM2ks9d14ZYCvmHS9iAKVt9AyzRSqNU1qabPih5BY=
+github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da/go.mod h1:eHEWzANqSiWQsof+nXEI9bUVUyV6F53Fp89EuCh2EAA=
+github.com/aead/poly1305 v0.0.0-20180717145839-3fee0db0b635 h1:52m0LGchQBBVqJRyYYufQuIbVqRawmubW3OFGqK1ekw=
+github.com/aead/poly1305 v0.0.0-20180717145839-3fee0db0b635/go.mod h1:lmLxL+FV291OopO93Bwf9fQLQeLyt33VJRUg5VJ30us=
 github.com/cretz/bine v0.1.1-0.20191105223159-1c71414a61dc h1:Y2CvXooSQ+ey3x6Yi4B4pxK+QCLa4dOpxIhjeMTt3dA=
 github.com/cretz/bine v0.1.1-0.20191105223159-1c71414a61dc/go.mod h1:6PF6fWAvYtwjRGkAuDEJeWNOv3a2hUouSP/yRYXmvHw=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/jedisct1/go-dnsstamps v0.0.0-20210810213811-61cc83d2a354 h1:sIB9mDh2spQdh95jeXF2h9uSNtObbehD0YbDCzmqbM8=
+github.com/jedisct1/go-dnsstamps v0.0.0-20210810213811-61cc83d2a354/go.mod h1:t35n6rsPE3nD3RXbc5hI5Ax1ci/SSYTpx0BdMXh/1aE=
 github.com/pkg/errors v0.8.1-0.20171018195549-f15c970de5b7 h1:RcqIXZDN7Vz5lgK7+0h3MFF2JNgEu4h91palXJLJ354=
 github.com/pkg/errors v0.8.1-0.20171018195549-f15c970de5b7/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

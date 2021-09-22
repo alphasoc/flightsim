@@ -8,4 +8,6 @@ const (
 	CloudFlareProvider
 	Quad9Provider
 	OpenDNSProvider
+	ScalewayFR
+	Yandex
 )

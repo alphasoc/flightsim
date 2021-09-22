@@ -18,10 +18,10 @@ const (
 	Random Protocol = iota
 	DoH
 	DoT
-	// EncryptedDNS
+	DNSCrypt
 )
 
-var protocolMap map[string]Protocol = map[string]Protocol{"doh": DoH, "dot": DoT}
+var protocolMap map[string]Protocol = map[string]Protocol{"doh": DoH, "dot": DoT, "dnscrypt": DNSCrypt}
 
 // RandomProtocol returns a random supported Protocol.
 func RandomProtocol() Protocol {
@@ -50,6 +50,20 @@ func (r *Response) DOTResponse() ([]string, error) {
 		return nil, fmt.Errorf("not a DoT response")
 	}
 	return dotResp, nil
+}
+
+// DNSCryptResponse extracts a DNSCrypt ([]byte) response, converts it to a
+// *dnsmessage.Message and returns it along with an error.
+func (r *Response) DNSCryptResponse() (*dnsmessage.Message, error) {
+	dnsCryptResp, ok := r.U.([]byte)
+	if !ok {
+		return nil, fmt.Errorf("not a DNSCrypt response")
+	}
+	dnsMsg := &dnsmessage.Message{}
+	if err := dnsMsg.Unpack(dnsCryptResp); err != nil {
+		return nil, err
+	}
+	return dnsMsg, nil
 }
 
 // Queryable interface specifies the functionality that providers must implement.

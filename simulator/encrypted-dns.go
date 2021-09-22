@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/alphasoc/flightsim/simulator/encdns"
+	"github.com/alphasoc/flightsim/simulator/encdns/dnscrypt"
+	dnscryptproviders "github.com/alphasoc/flightsim/simulator/encdns/dnscrypt/providers"
 	"github.com/alphasoc/flightsim/simulator/encdns/doh"
 	dohproviders "github.com/alphasoc/flightsim/simulator/encdns/doh/providers"
 	"github.com/alphasoc/flightsim/simulator/encdns/dot"
@@ -41,6 +43,8 @@ func randomProvider(ctx context.Context, p encdns.Protocol) encdns.Queryable {
 		return dohproviders.NewRandom(ctx)
 	case encdns.DoT:
 		return dotproviders.NewRandom(ctx)
+	case encdns.DNSCrypt:
+		return dnscryptproviders.NewRandom(ctx)
 	default:
 		return nil
 	}
@@ -68,10 +72,10 @@ func (s *EncryptedDNS) Simulate(ctx context.Context, host string) error {
 		}
 		label := strings.ToLower(utils.RandString(30))
 
-		ctx, cancelFn := context.WithTimeout(ctx, 1000*time.Millisecond)
+		ctx, cancelFn := context.WithTimeout(ctx, 200*time.Millisecond)
 		defer cancelFn()
-
 		resp, err := p.QueryTXT(ctx, fmt.Sprintf("%s.%s", label, host))
+
 		// Ignore timeout.  In case of DoH, when err != nil, resp.Body has already been
 		// closed.
 		// TODO: Need timeout/dial error check from issues/39
@@ -105,6 +109,15 @@ func (s *EncryptedDNS) Simulate(ctx context.Context, host string) error {
 			// All good.  We don't care anymore about the actual response
 			// (ie. no such host, etc).
 			// TODO: If that's not the case, we can add more comprehensive response parsing.
+		case encdns.DNSCrypt:
+			dnsCryptResp, err := resp.DNSCryptResponse()
+			fmt.Println(dnsCryptResp)
+			if err != nil {
+				return fmt.Errorf("failed extracting DNSCrypt response: %v", err)
+			}
+			if !dnscrypt.IsValidResponse(dnsCryptResp) {
+				return fmt.Errorf("bad response: %v", dnsCryptResp)
+			}
 		}
 		<-ctx.Done()
 	}
