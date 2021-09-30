@@ -46,6 +46,7 @@ func (h *WisdomHosts) Hosts(scope string, size int) ([]string, error) {
 	q.Set("category", h.category)
 	q.Set("type", h.hostType)
 	q.Set("limit", "1000") // the actual limit is much lower, but we want everything
+	q.Set("min", strconv.Itoa(size))
 	if scope != "" {
 		q.Set("family", scope)
 	}
