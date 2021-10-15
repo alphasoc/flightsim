@@ -6,6 +6,8 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+// The private key here is solely used to authenticate with the server-side application
+// accpeting the SSH/SFTP data transfer.  This is being done on purpose.
 const privKey = `-----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
 QyNTUxOQAAACA6El6xrgg3fzl6dbygysFLXmVN3ysbLnbnkD8jpgOAxQAAAJiL5q0ti+at

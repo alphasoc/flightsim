@@ -86,25 +86,28 @@ func newClient(
 	return c, nil
 }
 
+type simulationContext struct {
+	Ctx        context.Context
+	Dst        string
+	ClientName string
+	Handle     string
+	SendSize   bytesize.ByteSize
+	Signer     ssh.Signer
+	Ch         chan<- simssh.WriteResponse
+}
+
 // simulate performs the actual client connect and write on behalf of Simulate().
-func (s *SSHTransfer) simulate(
-	ctx context.Context,
-	dst string,
-	clientName string,
-	handle string,
-	sendSize bytesize.ByteSize,
-	signer ssh.Signer,
-	ch chan<- simssh.WriteResponse) {
-	c, err := newClient(ctx, clientName, s.src, dst, signer)
+func (s *SSHTransfer) simulate(simCtx *simulationContext) {
+	c, err := newClient(simCtx.Ctx, simCtx.ClientName, s.src, simCtx.Dst, simCtx.Signer)
 	if err != nil {
 		// Piggy back client connect errors on WriteResponse chan.
 		res := simssh.WriteResponse{}
-		res.ClientName = clientName
+		res.ClientName = simCtx.ClientName
 		res.Err = err
-		ch <- res
+		simCtx.Ch <- res
 		return
 	}
-	ch <- c.WriteRandom(handle, sendSize)
+	simCtx.Ch <- c.WriteRandom(simCtx.Handle, simCtx.SendSize)
 	c.Teardown()
 }
 
@@ -128,14 +131,15 @@ func (s *SSHTransfer) Simulate(ctx context.Context, dst string) error {
 	// write responses.
 	writeCh := make(chan simssh.WriteResponse, numClients)
 	for i := 0; i < numClients; i++ {
-		go s.simulate(
-			ctx,
-			dst,
-			fmt.Sprintf("alphasoc-%v", i),
-			fmt.Sprintf("flightsim-ssh-transfer-%v", i),
-			senderSizes[i],
-			signer,
-			writeCh)
+		go s.simulate(&simulationContext{
+			Ctx:        ctx,
+			Dst:        dst,
+			ClientName: fmt.Sprintf("alphasoc-%v", i),
+			Handle:     fmt.Sprintf("flightsim-ssh-transfer-%v", i),
+			SendSize:   senderSizes[i],
+			Signer:     signer,
+			Ch:         writeCh})
+
 	}
 	var errsEncountered []string
 	var totalBytesSent bytesize.ByteSize
