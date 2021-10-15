@@ -104,7 +104,7 @@ func (s *SSHTransfer) simulate(
 		ch <- res
 		return
 	}
-	c.WriteRandom(handle, sendSize, ch)
+	ch <- c.WriteRandom(handle, sendSize)
 	c.Teardown()
 }
 

@@ -240,14 +240,13 @@ func (c *Client) SendClose(handle string) (*fxp.Status, error) {
 	return closeResp, nil
 }
 
-// writeRandom writes toSend bytes of 'random' data to the server.  A WriteResponse is created
-// and sent down the channel ch.
-func (c *Client) WriteRandom(handleStr string, toSend bytesize.ByteSize, ch chan<- WriteResponse) {
+// WriteRandom writes toSend bytes of 'random' data to the server.  A WriteResponse is created
+// and returned.
+func (c *Client) WriteRandom(handleStr string, toSend bytesize.ByteSize) WriteResponse {
 	// First, send an open request.
 	openResp, err := c.SendOpen(handleStr, os.O_CREATE)
 	if err != nil {
-		ch <- WriteResponse{c.Name, 0, "", err}
-		return
+		return WriteResponse{c.Name, 0, "", err}
 	}
 	handle := openResp.Handle
 	// 1MB writes.
@@ -274,11 +273,10 @@ func (c *Client) WriteRandom(handleStr string, toSend bytesize.ByteSize, ch chan
 			totalDataBytesSent += dataBytesSent
 		}
 		if err != nil {
-			ch <- WriteResponse{c.Name, totalDataBytesSent, handle, fmt.Errorf("failed transfer: %w", err)}
-			return
+			return WriteResponse{c.Name, totalDataBytesSent, handle, fmt.Errorf("failed transfer: %w", err)}
 		}
 	}
 	// Close the handle.  We don't care about the response, just the error.
 	_, err = c.SendClose(handle)
-	ch <- WriteResponse{c.Name, totalDataBytesSent, handle, err}
+	return WriteResponse{c.Name, totalDataBytesSent, handle, err}
 }
