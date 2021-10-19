@@ -140,6 +140,9 @@ type Module struct {
 	Timeout      time.Duration
 	// FailMsg    string
 	SuccessMsg string
+	// False by default.  If true, don't wait until Timeout between simulation
+	// runs of this module.
+	Fast bool
 }
 
 func (m *Module) FormatHost(host string) string {
@@ -149,7 +152,10 @@ func (m *Module) FormatHost(host string) string {
 			host = h
 		}
 	}
-
+	// Check if the simulator module implements the HostMsgFormatter interface.
+	if hostMsgFormatter, ok := m.Module.(simulator.HostMsgFormatter); ok {
+		return hostMsgFormatter.HostMsg(host)
+	}
 	f := m.HostMsg
 	if f == "" {
 		switch m.Pipeline {
@@ -194,7 +200,7 @@ var allModules = []Module{
 	// 	Pipeline:   PipelineDNS,
 	// 	NumOfHosts: 1,
 	// 	HeaderMsg:  "",
-	// 	HostMsg:    "Resolving %s via ns1.sandbox.alphasoc.xyz",
+	// 	HostMsg:    "Resolving %s via dns.sandbox-services.alphasoc.xyz",
 	// 	Timeout:    1 * time.Second,
 	// 	// FailMsg:    "Test failed (queries to arbitrary DNS servers are blocked)",
 	// 	SuccessMsg: "Success! DNS hijacking is possible in this environment",
@@ -277,6 +283,24 @@ var allModules = []Module{
 		HeaderMsg:  "Resolving random imposter domains",
 		Timeout:    1 * time.Second,
 	},
+	Module{
+		Module:     simulator.NewSSHTransfer(),
+		Name:       "ssh-transfer",
+		Pipeline:   PipelineIP,
+		NumOfHosts: 1,
+		HeaderMsg:  "Preparing to send randomly generated data to a standard SSH port",
+		Timeout:    5 * time.Minute,
+		Fast:       true,
+	},
+	Module{
+		Module:     simulator.NewSSHExfil(),
+		Name:       "ssh-exfil",
+		Pipeline:   PipelineIP,
+		NumOfHosts: 1,
+		HeaderMsg:  "Preparing to send randomly generated data to a non-standard SSH port",
+		Timeout:    5 * time.Minute,
+		Fast:       true,
+	},
 }
 
 type Simulation struct {
@@ -344,8 +368,9 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 							okHosts++
 						}
 
-						// wait until context expires (unless fast mode or very last iteration)
-						if !fast && ((simN < len(sims)-1) || (hostN < len(hosts)-1)) {
+						// Wait until context expires, unless fast global mode,
+						// fast module (default false) or very last iteration.
+						if !(fast || sim.Fast) && ((simN < len(sims)-1) || (hostN < len(hosts)-1)) {
 							<-ctx.Done()
 						}
 
