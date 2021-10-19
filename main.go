@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/alphasoc/flightsim/cmd/get"
 	"github.com/alphasoc/flightsim/cmd/run"
 )
 
@@ -20,10 +21,12 @@ Usage:
     flightsim <command> [arguments]
 
 Available commands:
+    get         Get a list of elements (ie. families) of a certain category (ie. c2)
     run         Run all modules, or a particular module
     version     Prints the version number
 
 Cheatsheet:
+    flightsim get families:c2       Get a list of all c2 families
     flightsim run                   Run all the modules
     flightsim run c2                Simulate C2 traffic
     flightsim run c2:trickbot       Simulate C2 traffic for the TrickBot family
@@ -48,6 +51,9 @@ func main() {
 	var err error
 
 	switch cmd {
+	case "get":
+		get.Version = Version
+		err = get.RunCmd(args)
 	case "run":
 		run.Version = Version
 		err = run.RunCmd(args)
