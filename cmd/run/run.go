@@ -74,10 +74,14 @@ func RunCmd(args []string) error {
 	if *size < 0 {
 		*size = 0
 	}
-
-	extIP, err := utils.ExternalIP(*ifaceName)
+	// Grab a "usable" IP address for ifaceName.
+	bindIP, err := utils.UsableIP(*ifaceName)
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to determine usable IP address for '%v': %v", *ifaceName, err)
+	}
+	bind := simulator.BindAddr{Addr: bindIP}
+	if *ifaceName != "" {
+		bind.UserSet = true
 	}
 
 	sims, err := selectSimulations(modules)
@@ -90,7 +94,7 @@ func RunCmd(args []string) error {
 	// 		sims[i].Timeout = 100 * time.Millisecond
 	// 	}
 	// }
-	return run(sims, extIP, *size)
+	return run(sims, bind, *size)
 }
 
 func selectSimulations(names []string) ([]*Simulation, error) {
@@ -322,15 +326,59 @@ const (
 	msgPrefixErrorRecover = "FATAL: Module terminated: "
 )
 
-func run(sims []*Simulation, extIP net.IP, size int) error {
-	printWelcome(extIP.String())
+// getDefaultDNSIntf runs a DNS probe using default system resolver and returns the IP of
+// the interface used and an error.  Thanks @tg.
+func getDefaultDNSIntf() (string, error) {
+	timeout := 10 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	var defaultDNSServer string
+	r := &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			// we can capture the address here
+			defaultDNSServer = address
+			// still use the default dialer
+			var d net.Dialer
+			return d.DialContext(ctx, network, address)
+		},
+	}
+	_, err := r.LookupHost(ctx, "alphasoc.com")
+	if err != nil {
+		return "", err
+	}
+	conn, err := net.DialTimeout("udp", defaultDNSServer, timeout)
+	if err != nil {
+		return "", err
+	}
+	dnsIntfIP, _, err := net.SplitHostPort(conn.LocalAddr().String())
+	if err != nil {
+		return "", err
+	}
+	return dnsIntfIP, nil
+}
+
+func run(sims []*Simulation, bind simulator.BindAddr, size int) error {
+	// If user override on iface, both IP and DNS traffic will flow through bind.Addr.
+	// NOTE: not passing the DNS server to printWelcome(), as it may be confusing in cases
+	// where there are multiple nameservers configured (ie. resolver errors will carry
+	// the address of the last queried nameserver).
+	defaultDNSIntfIP, err := getDefaultDNSIntf()
+	if err != nil {
+		return fmt.Errorf("Failed DNS probe: %v", err)
+	}
+	if bind.UserSet {
+		printWelcome(bind.String(), bind.String())
+	} else {
+		printWelcome(bind.String(), defaultDNSIntfIP)
+	}
 	printHeader()
 
 	for simN, sim := range sims {
 		fmt.Print("\n")
 
 		okHosts := 0
-		err := sim.Init(extIP)
+		err := sim.Init(bind)
 		if err != nil {
 			printMsg(sim, msgPrefixErrorInit+fmt.Sprint(err))
 		} else {

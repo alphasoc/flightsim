@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -37,7 +36,7 @@ func NewTorSimulator() *TorSimulator {
 
 // Tor creates tor connector;
 // There is no way to pass the bind IP to tor, so we ignore it.
-func (t *TorSimulator) Init(_ net.IP) error {
+func (t *TorSimulator) Init(_ BindAddr) error {
 	tor, err := tor.Start(nil, &tor.StartConf{
 		TempDataDirBase:   os.TempDir(),
 		RetainTempDataDir: false,

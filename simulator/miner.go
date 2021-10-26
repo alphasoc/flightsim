@@ -10,7 +10,7 @@ const miningSubscribeBody string = `{"jsonrpc": "2.0", "id": 1, "method": "minin
 
 //StratumMiner simulator
 type StratumMiner struct {
-	bind net.IP
+	bind BindAddr
 }
 
 //NewStratumMiner creates new StratumMiner simulator
@@ -18,7 +18,7 @@ func NewStratumMiner() *StratumMiner {
 	return &StratumMiner{}
 }
 
-func (s *StratumMiner) Init(bind net.IP) error {
+func (s *StratumMiner) Init(bind BindAddr) error {
 	s.bind = bind
 	return nil
 }
@@ -28,10 +28,7 @@ func (StratumMiner) Cleanup() {
 
 //Simulate connection to mining pool using Stratum protocol
 func (s *StratumMiner) Simulate(ctx context.Context, dst string) error {
-	d := &net.Dialer{}
-	if s.bind != nil {
-		d.LocalAddr = &net.TCPAddr{IP: s.bind}
-	}
+	d := &net.Dialer{LocalAddr: &net.TCPAddr{IP: s.bind.Addr}}
 	conn, err := d.DialContext(ctx, "tcp", dst)
 	if conn != nil {
 		deadline, _ := ctx.Deadline()
