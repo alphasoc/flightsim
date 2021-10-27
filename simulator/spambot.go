@@ -89,12 +89,11 @@ func (s *Spambot) Hosts(scope string, size int) ([]string, error) {
 	for n := 0; len(hosts) < size && n < len(idx); n++ {
 		ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
 		host := utils.FQDN(domains[idx[n]])
-		mx, err := rv.LookupMX(ctx, host)
+		mx, _ := rv.LookupMX(ctx, host)
 		cancel()
 		// Check error message for sign of resolver/routing issue.
-		if err != nil && isDialError(err) {
-			return hosts, err
-		}
+		// TODO: at some point we'll want to check dialer errors for a sign of resolver
+		// problems
 		if len(mx) > 0 {
 			host := strings.TrimSuffix(mx[0].Host, ".")
 			if !seen[host] {
