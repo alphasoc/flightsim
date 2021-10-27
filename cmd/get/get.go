@@ -126,15 +126,16 @@ func RunCmd(args []string) error {
 	cmdLine := flag.NewFlagSet("get", flag.ExitOnError)
 	// TODO: replace cols with -format (issue #45).
 	// cols := cmdLine.Int("cols", 0, "print elements in number of columns")
+	usageMsg := fmt.Sprintf(usage, strings.Join(supportedElements(), ", "), strings.Join(supportedCategories(), ", "))
 	cmdLine.Usage = func() {
-		fmt.Fprintf(cmdLine.Output(), usage, strings.Join(supportedElements(), ", "), strings.Join(supportedCategories(), ", "))
+		fmt.Fprintf(cmdLine.Output(), usageMsg)
 		cmdLine.PrintDefaults()
 	}
 	cmdLine.Parse(args)
 	// Next arg should be element:category (ie. families:c2)
 	toGet := cmdLine.Arg(0)
 	if len(toGet) == 0 {
-		return fmt.Errorf("nothing to get")
+		return fmt.Errorf("nothing to get\n\n%v", usageMsg)
 	}
 	toGetArr := strings.Split(cmdLine.Arg(0), ":")
 	if len(toGetArr) != 2 {

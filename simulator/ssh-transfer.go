@@ -30,9 +30,9 @@ func NewSSHTransfer() *SSHTransfer {
 	return &SSHTransfer{}
 }
 
-// defaultSendSize returns a 100 bytesize.MB default.
+// defaultSendSize returns a 200 bytesize.MB default.
 func (s *SSHTransfer) defaultSendSize() bytesize.ByteSize {
-	return 100 * bytesize.MB
+	return 200 * bytesize.MB
 }
 
 // defualtTargetHosts returns a default string slice of targets in the {HOST:IP} form.

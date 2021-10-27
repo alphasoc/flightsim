@@ -27,9 +27,9 @@ func (s *SSHExfil) defaultTargetHosts() []string {
 	return []string{fmt.Sprintf("ssh.sandbox-services.alphasoc.xyz:%v", ports[pos])}
 }
 
-// defaultSendSize returns a 100 bytesize.MB default.
+// defaultSendSize returns a 200 bytesize.MB default.
 func (s *SSHExfil) defaultSendSize() bytesize.ByteSize {
-	return 100 * bytesize.MB
+	return 200 * bytesize.MB
 }
 
 // Hosts sets the simulation send size, and extracts the destination hosts.  A slice of

@@ -24,16 +24,20 @@ teams to evaluate security controls (e.g. firewalls) and ensure that monitoring 
 are able to detect malicious traffic.
 
 Usage:
-  flightsim <command> [arguments]
+    flightsim <command> [arguments]
 
-Available Commands:
-  run         Run all modules, or a particular module
-  version     Prints the version number
+Available commands:
+    get         Get a list of elements (ie. families) of a certain category (ie. c2)
+    run         Run all modules, or a particular module
+    version     Prints the version number
 
 Cheatsheet:
-  flightsim run                Run all the modules
-  flightsim run c2             Simulate C2 traffic
-  flightsim run c2:trickbot    Simulate C2 traffic for the TrickBot family
+    flightsim run                   Run all the modules
+    flightsim run c2                Simulate C2 traffic
+    flightsim run c2:trickbot       Simulate C2 traffic for the TrickBot family
+    flightsim run ssh-transfer:1GB  Simulate a 1GB SSH/SFTP file transfer
+
+    flightsim get families:c2       Get a list of all c2 families
 ```
 
 The utility runs individual modules to generate malicious traffic. To perform all available tests, simply use `flightsim run` which will generate traffic using the first available non-loopback network interface. **Note:** when running many modules, flightsim will gather destination addresses from the AlphaSOC API, so requires egress Internet access.
@@ -44,7 +48,7 @@ To list the available modules, use `flightsim run --help`. To execute a particul
 $ flightsim run --help
 usage: flightsim run [flags] [modules]
 
-To run all available simulators, call:
+To run all available modules, call:
 
     flightsim run
 
@@ -54,43 +58,80 @@ To run all available simulators, call:
 
 Available modules:
 
-	c2, dga, miner, scan, sink, spambot, tunnel-dns, tunnel-icmp
+        c2, dga, imposter, miner, scan, sink, spambot, ssh-exfil, ssh-transfer, tunnel-dns, tunnel-icmp
 
 Available flags:
   -dry
-    	print actions without performing any network activity
+        print actions without performing any network activity
   -fast
-    	reduce sleep intervals between simulation events
+        reduce sleep intervals between simulation events
   -iface string
-    	network interface or local IP address to use
+        network interface or local IP address to use
   -size int
-    	number of hosts generated for each simulator
+        number of hosts generated for each simulator
 
 $ flightsim run dga
 
 AlphaSOC Network Flight Simulator™  (https://github.com/alphasoc/flightsim)
-The IP address of the network interface is 172.20.10.2
-The current time is 23-Jan-20 11:33:21
+The address of the network interface for IP traffic is 192.168.220.38
+The address of the network interface for DNS queries is 192.168.220.38
+The current time is 26-Oct-21 17:28:51
 
-11:33:21 [dga] Generating a list of DGA domains
-11:33:21 [dga] Resolving nurqatp.space
-11:33:22 [dga] Resolving uahscqe.top
-11:33:23 [dga] Resolving asimazf.biz
-11:33:24 [dga] Resolving phxeohj.biz
-11:33:25 [dga] Resolving crgwsoe.biz
-11:33:26 [dga] Resolving sazafls.biz
-11:33:27 [dga] Resolving gljyxdv.space
-11:33:28 [dga] Resolving eiontgl.top
-11:33:29 [dga] Resolving pqjseqc.top
-11:33:30 [dga] Resolving mamsnmu.biz
-11:33:31 [dga] Resolving ntettqn.top
-11:33:32 [dga] Resolving niyvbvg.top
-11:33:33 [dga] Resolving bxgqonb.biz
-11:33:34 [dga] Resolving encggla.top
-11:33:35 [dga] Resolving qphfoxn.biz
-11:33:35 [dga] Done (15/15)
+17:28:51 [dga] Generating a list of DGA domains
+17:28:51 [dga] Resolving 6kauziij.com
+17:28:52 [dga] Resolving paxeo0jk.biz
+17:28:53 [dga] Resolving iuuub8al.biz
+17:28:54 [dga] Resolving bxsei3nj.com
+17:28:55 [dga] Resolving zbwltf1h.space
+17:28:56 [dga] Resolving yoze7avi.com
+17:28:57 [dga] Resolving ijax8aqw.space
+17:28:58 [dga] Resolving wwrjyj4l.space
+17:28:59 [dga] Resolving uioc5hky.com
+17:29:00 [dga] Resolving lcwdji5t.biz
+17:29:01 [dga] Resolving zluwcb4h.biz
+17:29:02 [dga] Resolving 8jodcvhj.space
+17:29:03 [dga] Resolving ju5haxur.com
+17:29:04 [dga] Resolving ivthu2dl.biz
+17:29:05 [dga] Resolving ha0bsxft.com
+17:29:05 [dga] Done (15/15)
 
 All done! Check your SIEM for alerts using the timestamps and details above.
+```
+
+The utility also has a `get` command which can be used to query information that can later be used with the simulation modules. At present, a list of C2 families can be obtained to be used with the C2 module. To see how to use the `get` command, run `flightsim get -h` as below.
+
+```
+$ flightsim get -h
+
+AlphaSOC Network Flight Simulator™  (https://github.com/alphasoc/flightsim)
+The current time is 26-Oct-21 17:42:23
+
+usage: flightsim get [flags] element:category
+
+Available elements:
+
+        families
+
+Available categories:
+
+        c2
+
+Available flags:
+```
+
+To get a list of C2 families, run:
+
+```
+$ flightsim get families:c2
+
+AlphaSOC Network Flight Simulator™  (https://github.com/alphasoc/flightsim)
+The current time is 26-Oct-21 17:43:51
+
+17:43:51 [families:c2] Fetching c2 families
+17:44:01 [families:c2] 404 Keylogger, AB Stealer, AceRAT, Adwind, Agent Tesla, Aggah, Alien, Amadeus Stealer, Amadey, Anubis, APT29, Ares, Arkei Stealer, ARS VBS Loader, AsyncRAT, Athena, ATRAPS, Avalon, Ave Maria, AZORult, Banload, BASHLITE, BazarBackdoor, Beta Bot, BitRAT, BlackMatter, BlackNET RAT, BlackRock, Blackshades, BlackWorm RAT, Bloody Stealer, BlueBot, Bozok RAT, Buer Loader, Cafeini, CCleaner Backdoor, cerberus, Cerberus, ChaChi, Chrysaor, Citadel, Cloud Stalker, Cobalt Strike, Colibri, Collector Stealer, cookiestealer, coronastealer, Crimson RAT, CryptBot, CyberGate RAT, Cypress, Cythosia, DanaBot, DarkComet, DarkSide, Darktrack RAT, DCRat, deeprats, DiamondFox, Djvu, DoppelDridex, Dridex, Eredel, evilbear, FakeCop, Ficker Stealer, FIN7, FlawedGrace, FormBook, GachiSteal, Gaudox, Gazorp, GCleaner, Gh0st RAT, Glupteba, Godzilla Loader, Gomorrah, gomorrahstealer, Gorynych, Gozi, Grandoreiro, griffon, GuLoader, H1N1, HAFNIUM, Hancitor, Haxdoor, Hidden Tear, HorusEyes, Houdini, Hydra, IcedID, ISR Stealer, JackPOS, JSOutProx, KeyBase, Keylogger, Kimsuky, KPOT Stealer, Lemon Duck, Lilith, LimeRAT, LiteHTTP, littlethief, Loda, LokiBot, Lu0bot, Lucifer, MassLogger, Mekotio, Metamorfo, Metasploit, Mirai, MirrorBlast, Mispadu, modernloader, MooBot, Mozi, Mythic, NanoCore RAT, Netbounce, NetBus, Netfilter Rootkit, NetSupport Manager, NetWire RAT, Neutrino, Nexus, Nishang, Nixscare, njRAT, NOBELIUM, NodeJS Ransomware, NovaHTTP, Orcus RAT, Oski Stealer, Ostap, Ousaban, Ozone RAT, Parallax RAT, Parasite HTTP RAT, plague, Poison Ivy, Pony, PoshC2, Poulight Stealer, PowerShell Empire, Predator the Thief, ProjectSpy, ProRat, PsiXBot, Purple Fox, QNAPCrypt, QNodeService, Quakbot, Quasar RAT, Qudox, Raccoon Stealer, Ratty, RedLine, RedLine Stealer, Remcos RAT, RevengeRAT, REvil, Rezo, RMS, RuRAT, Ryuk, saint, Sality, SamoRAT, Saruman Stealer, SectopRAT, ServHelper, Seth HTTP Botnet, sh1zo1der, sicherheitrat, SilverFish, sliver, sLoad, Smoke Loader, SolarMarker, SOMBRAT, Squirrelwaffle, SquirrelWaffle, Stealer-DT, StealthWorker, StealthWorker Go, StormKitty, STRRAT, SupremeMiner, systembc, SystemBC, TA505, Taurus, TeamBot, Tofsee, TrickBot, TriumphLoader, Tsunami, TVRAT, uAdmin, Umbra Loader, Ursnif, vertex, VertexNet, Vidar, Vjw0rm, VKeylogger, VoidRAT, Vulturi Stealer, XOR DDoS, XpertRAT, XtremeRAT, ZeroAccess, Zeus, zgRAT, ZHacker13 ReverseTCPShell, Zloader, ztds, Zyklon
+17:44:01 [families:c2] Fetched 220 c2 families
+
+All done!
 ```
 
 ## Description of Modules
@@ -101,9 +142,12 @@ The modules packaged with the utility are listed in the table below.
 | ------------- | ----------------------------------------------------------------------------- |
 | `c2`          | Generates both DNS and IP traffic to a random list of known C2 destinations   |
 | `dga`         | Simulates DGA traffic using random labels and top-level domains               |
+| `imposter`    | Generates DNS traffic to a list of imposter domains                           |
 | `miner`       | Generates Stratum mining protocol traffic to known cryptomining pools         |
 | `scan`        | Performs a port scan of random RFC 5737 addresses using common TCP ports      |
 | `sink`        | Connects to known sinkholed destinations run by security researchers          |
 | `spambot`     | Resolves and connects to random Internet SMTP servers to simulate a spam bot  |
+| `ssh-exfil`   | Simulates an SSH file transfer to a service running on a non-standard SSH port|
+| `ssh-transfer`| Simulates an SSH file transfer to a service running on an SSH port            |
 | `tunnel-dns`  | Generates DNS tunneling requests to \*.sandbox.alphasoc.xyz                   |
 | `tunnel-icmp` | Generates ICMP tunneling traffic to an Internet service operated by AlphaSOC  |

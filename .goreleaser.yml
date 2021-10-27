@@ -55,8 +55,6 @@ release:
   footer: |
     ## Enjoy!
 
-    Those were the changes on {{ .Tag }}!
-
   # You can change the name of the release.
   # Default is `{{.Tag}}` on OSS and `{{.PrefixedTag}}` on Pro.
   name_template: "{{.ProjectName}}-v{{.Version}}"
