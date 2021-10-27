@@ -72,8 +72,8 @@ func (s *TCPConnectSimulator) Simulate(ctx context.Context, dst string) error {
 	if conn != nil {
 		conn.Close()
 	}
-	// TODO: Dropping isDialError() check, as it's causing too many io-timeout messages.
-	if err != nil && !isSoftError(err, "connect: connection refused") && !isDialError(err) {
+	// Ignore "connection refused" and timeouts.
+	if err != nil && !isSoftError(err, "connect: connection refused") {
 		return err
 	}
 	return nil
@@ -110,23 +110,12 @@ func (s *DNSResolveSimulator) Simulate(ctx context.Context, dst string) error {
 	host = utils.FQDN(host)
 
 	_, err := r.LookupHost(ctx, host)
-	// Ignore "no such host".  Will ignore timeouts as well, so check for dial errors.
-	// TODO: Dropping isDialError() check, as it's causing too many io-timeout messages.
-	if err != nil && !isSoftError(err, "no such host") && !isDialError(err) {
+	// Ignore "no such host" and timeouts.
+	if err != nil && !isSoftError(err, "no such host") {
 		return err
 	}
 
 	return nil
-}
-
-// isDialError scans an error message for signs of a dial error, returning a boolean.
-func isDialError(err error) bool {
-	// Errors we're after are of the form:
-	// lookup abc.sandbox.alphasoc.xyz. on A.B.C.D:53: dial udp E.F.G.H:0->A.B.C.D:53: i/o timeout
-	// TODO: something more robust?  I don't want to double-dial though.
-	return isTimeout(err) &&
-		strings.Contains(err.Error(), "dial") &&
-		strings.Count(err.Error(), "->") == 1
 }
 
 func isTimeout(err error) bool {
