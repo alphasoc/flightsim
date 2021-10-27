@@ -72,9 +72,8 @@ func (s *TCPConnectSimulator) Simulate(ctx context.Context, dst string) error {
 	if conn != nil {
 		conn.Close()
 	}
-	// This will likely generate some superfluous io-timeout error messages, but if the
-	// user specifies a misconfigured interface, they'll see the simulation failing.
-	if err != nil && (!isSoftError(err, "connect: connection refused") || isDialError(err)) {
+	// TODO: Dropping isDialError() check, as it's causing too many io-timeout messages.
+	if err != nil && !isSoftError(err, "connect: connection refused") && !isDialError(err) {
 		return err
 	}
 	return nil
@@ -112,7 +111,8 @@ func (s *DNSResolveSimulator) Simulate(ctx context.Context, dst string) error {
 
 	_, err := r.LookupHost(ctx, host)
 	// Ignore "no such host".  Will ignore timeouts as well, so check for dial errors.
-	if err != nil && (!isSoftError(err, "no such host") || isDialError(err)) {
+	// TODO: Dropping isDialError() check, as it's causing too many io-timeout messages.
+	if err != nil && !isSoftError(err, "no such host") && !isDialError(err) {
 		return err
 	}
 

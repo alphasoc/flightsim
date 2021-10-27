@@ -57,7 +57,7 @@ func (s *Tunnel) Simulate(ctx context.Context, host string) error {
 		_, err := r.LookupTXT(ctx, fmt.Sprintf("%s.%s", label, host))
 
 		// Ignore "no such host".  Will ignore timeouts as well, so check for dial errors.
-		if err != nil && (!isSoftError(err, "no such host") || isDialError(err)) {
+		if err != nil && !isSoftError(err, "no such host") && !isDialError(err) {
 			return err
 		}
 

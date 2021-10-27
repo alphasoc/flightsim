@@ -44,7 +44,8 @@ func (s *StratumMiner) Simulate(ctx context.Context, dst string) error {
 		conn.Close()
 	}
 
-	if isSoftError(err, "connect: connection refused") {
+	// TODO Dropping isDialError() as an error as it's causing too many io-timeout messages.
+	if isSoftError(err, "connect: connection refused") || isDialError(err) {
 		return nil
 	}
 	return err
