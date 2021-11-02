@@ -327,8 +327,8 @@ const (
 )
 
 // getDefaultDNSIntf runs a DNS probe using default system resolver and returns the IP of
-// the interface used and an error.  Thanks @tg.
-func getDefaultDNSIntf() (string, error) {
+// the interface used, or an empty string.  Thanks @tg.
+func getDefaultDNSIntf() string {
 	timeout := 10 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -345,17 +345,22 @@ func getDefaultDNSIntf() (string, error) {
 	}
 	_, err := r.LookupHost(ctx, "alphasoc.com")
 	if err != nil {
-		return "", err
+		return ""
+	}
+	// In cases where r.Dial() is not invoked, defaultDNSServer will be "", so don't bother
+	// continuing with detection (ie. on Windows).
+	if defaultDNSServer == "" {
+		return ""
 	}
 	conn, err := net.DialTimeout("udp", defaultDNSServer, timeout)
 	if err != nil {
-		return "", err
+		return ""
 	}
 	dnsIntfIP, _, err := net.SplitHostPort(conn.LocalAddr().String())
 	if err != nil {
-		return "", err
+		return ""
 	}
-	return dnsIntfIP, nil
+	return dnsIntfIP
 }
 
 func run(sims []*Simulation, bind simulator.BindAddr, size int) error {
@@ -363,13 +368,11 @@ func run(sims []*Simulation, bind simulator.BindAddr, size int) error {
 	// NOTE: not passing the DNS server to printWelcome(), as it may be confusing in cases
 	// where there are multiple nameservers configured (ie. resolver errors will carry
 	// the address of the last queried nameserver).
-	defaultDNSIntfIP, err := getDefaultDNSIntf()
-	if err != nil {
-		return fmt.Errorf("Failed DNS probe: %v", err)
-	}
+	defaultDNSIntfIP := getDefaultDNSIntf()
 	if bind.UserSet {
 		printWelcome(bind.String(), bind.String())
 	} else {
+		// NOTE: defaultDNSIntfIP _may_ be "".
 		printWelcome(bind.String(), defaultDNSIntfIP)
 	}
 	printHeader()
