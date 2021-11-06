@@ -1023,6 +1023,24 @@ func (p *Parser) OPTResource() (OPTResource, error) {
 	return r, nil
 }
 
+// UnknownResource parses a single UnknownResource.
+//
+// One of the XXXHeader methods must have been called before calling this
+// method.
+func (p *Parser) UnknownResource() (UnknownResource, error) {
+	if !p.resHeaderValid {
+		return UnknownResource{}, ErrNotStarted
+	}
+	r, err := unpackUnknownResource(p.resHeader.Type, p.msg, p.off, p.resHeader.Length)
+	if err != nil {
+		return UnknownResource{}, err
+	}
+	p.off += int(p.resHeader.Length)
+	p.resHeaderValid = false
+	p.index++
+	return r, nil
+}
+
 // Unpack parses a full Message.
 func (m *Message) Unpack(msg []byte) error {
 	var p Parser
@@ -1557,6 +1575,30 @@ func (b *Builder) OPTResource(h ResourceHeader, r OPTResource) error {
 	return nil
 }
 
+// UnknownResource adds a single UnknownResource.
+func (b *Builder) UnknownResource(h ResourceHeader, r UnknownResource) error {
+	if err := b.checkResourceSection(); err != nil {
+		return err
+	}
+	h.Type = r.realType()
+	msg, lenOff, err := h.pack(b.msg, b.compression, b.start)
+	if err != nil {
+		return &nestedError{"ResourceHeader", err}
+	}
+	preLen := len(msg)
+	if msg, err = r.pack(msg, b.compression, b.start); err != nil {
+		return &nestedError{"UnknownResource body", err}
+	}
+	if err := h.fixLen(msg, lenOff, preLen); err != nil {
+		return err
+	}
+	if err := b.incrementSectionCount(); err != nil {
+		return err
+	}
+	b.msg = msg
+	return nil
+}
+
 // Finish ends message building and generates a binary message.
 func (b *Builder) Finish() ([]byte, error) {
 	if b.section < sectionHeader {
@@ -1819,17 +1861,6 @@ func unpackText(msg []byte, off int) (string, int, error) {
 	return string(msg[beginOff:endOff]), endOff, nil
 }
 
-func skipText(msg []byte, off int) (int, error) {
-	if off >= len(msg) {
-		return off, errBaseLen
-	}
-	endOff := off + 1 + int(msg[off])
-	if endOff > len(msg) {
-		return off, errCalcLen
-	}
-	return endOff, nil
-}
-
 // packBytes appends the wire format of field to msg.
 func packBytes(msg []byte, field []byte) []byte {
 	return append(msg, field...)
@@ -1841,14 +1872,6 @@ func unpackBytes(msg []byte, off int, field []byte) (int, error) {
 		return off, errBaseLen
 	}
 	copy(field, msg[off:newOff])
-	return newOff, nil
-}
-
-func skipBytes(msg []byte, off int, field []byte) (int, error) {
-	newOff := off + len(field)
-	if newOff > len(msg) {
-		return off, errBaseLen
-	}
 	return newOff, nil
 }
 
@@ -2154,12 +2177,14 @@ func unpackResourceBody(msg []byte, off int, hdr ResourceHeader) (ResourceBody, 
 		rb, err = unpackOPTResource(msg, off, hdr.Length)
 		r = &rb
 		name = "OPT"
+	default:
+		var rb UnknownResource
+		rb, err = unpackUnknownResource(hdr.Type, msg, off, hdr.Length)
+		r = &rb
+		name = "Unknown"
 	}
 	if err != nil {
 		return nil, off, &nestedError{name + " record", err}
-	}
-	if r == nil {
-		return nil, off, errors.New("invalid resource type: " + string(hdr.Type+'0'))
 	}
 	return r, off + int(hdr.Length), nil
 }
@@ -2603,4 +2628,37 @@ func unpackOPTResource(msg []byte, off int, length uint16) (OPTResource, error) 
 		opts = append(opts, o)
 	}
 	return OPTResource{opts}, nil
+}
+
+// An UnknownResource is a catch-all container for unknown record types.
+type UnknownResource struct {
+	Type Type
+	Data []byte
+}
+
+func (r *UnknownResource) realType() Type {
+	return r.Type
+}
+
+// pack appends the wire format of the UnknownResource to msg.
+func (r *UnknownResource) pack(msg []byte, compression map[string]int, compressionOff int) ([]byte, error) {
+	return packBytes(msg, r.Data[:]), nil
+}
+
+// GoString implements fmt.GoStringer.GoString.
+func (r *UnknownResource) GoString() string {
+	return "dnsmessage.UnknownResource{" +
+		"Type: " + r.Type.GoString() + ", " +
+		"Data: []byte{" + printByteSlice(r.Data) + "}}"
+}
+
+func unpackUnknownResource(recordType Type, msg []byte, off int, length uint16) (UnknownResource, error) {
+	parsed := UnknownResource{
+		Type: recordType,
+		Data: make([]byte, length),
+	}
+	if _, err := unpackBytes(msg, off, parsed.Data); err != nil {
+		return UnknownResource{}, err
+	}
+	return parsed, nil
 }

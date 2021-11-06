@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build aix || darwin || dragonfly || freebsd || linux || netbsd || openbsd || solaris || windows
 // +build aix darwin dragonfly freebsd linux netbsd openbsd solaris windows
 
 package icmp
@@ -68,7 +69,7 @@ func ListenPacket(network, address string) (*PacketConn, error) {
 		if err != nil {
 			return nil, os.NewSyscallError("socket", err)
 		}
-		if runtime.GOOS == "darwin" && family == syscall.AF_INET {
+		if (runtime.GOOS == "darwin" || runtime.GOOS == "ios") && family == syscall.AF_INET {
 			if err := syscall.SetsockoptInt(s, iana.ProtocolIP, sysIP_STRIPHDR, 1); err != nil {
 				syscall.Close(s)
 				return nil, os.NewSyscallError("setsockopt", err)

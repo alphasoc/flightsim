@@ -16,14 +16,16 @@ func NewHijack() *Hijack {
 }
 
 // Simulate port scanning for given host.
-func (*Hijack) Simulate(ctx context.Context, extIP net.IP, host string) error {
-	d := &net.Dialer{
-		LocalAddr: &net.UDPAddr{IP: extIP},
+func (*Hijack) Simulate(ctx context.Context, bind BindAddr, host string) error {
+	d := &net.Dialer{}
+	// Set the user overridden bind iface.
+	if bind.UserSet {
+		d.LocalAddr = &net.UDPAddr{IP: bind.Addr}
 	}
 	r := &net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			return d.DialContext(ctx, "udp", "ns1.sandbox.alphasoc.xyz:53")
+			return d.DialContext(ctx, "udp", "dns.sandbox-services.alphasoc.xyz:53")
 		},
 	}
 

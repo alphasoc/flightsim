@@ -61,7 +61,7 @@ func NewPortScan() *PortScan {
 	return &PortScan{}
 }
 
-func (s *PortScan) Init(bind net.IP) error {
+func (s *PortScan) Init(bind BindAddr) error {
 	return s.tcp.Init(bind)
 }
 

@@ -74,10 +74,14 @@ func RunCmd(args []string) error {
 	if *size < 0 {
 		*size = 0
 	}
-
-	extIP, err := utils.ExternalIP(*ifaceName)
+	// Grab a "usable" IP address for ifaceName.
+	bindIP, err := utils.UsableIP(*ifaceName)
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to determine usable IP address for '%v': %v", *ifaceName, err)
+	}
+	bind := simulator.BindAddr{Addr: bindIP}
+	if *ifaceName != "" {
+		bind.UserSet = true
 	}
 
 	sims, err := selectSimulations(modules)
@@ -90,7 +94,7 @@ func RunCmd(args []string) error {
 	// 		sims[i].Timeout = 100 * time.Millisecond
 	// 	}
 	// }
-	return run(sims, extIP, *size)
+	return run(sims, bind, *size)
 }
 
 func selectSimulations(names []string) ([]*Simulation, error) {
@@ -140,6 +144,9 @@ type Module struct {
 	Timeout      time.Duration
 	// FailMsg    string
 	SuccessMsg string
+	// False by default.  If true, don't wait until Timeout between simulation
+	// runs of this module.
+	Fast bool
 }
 
 func (m *Module) FormatHost(host string) string {
@@ -149,7 +156,10 @@ func (m *Module) FormatHost(host string) string {
 			host = h
 		}
 	}
-
+	// Check if the simulator module implements the HostMsgFormatter interface.
+	if hostMsgFormatter, ok := m.Module.(simulator.HostMsgFormatter); ok {
+		return hostMsgFormatter.HostMsg(host)
+	}
 	f := m.HostMsg
 	if f == "" {
 		switch m.Pipeline {
@@ -194,7 +204,7 @@ var allModules = []Module{
 	// 	Pipeline:   PipelineDNS,
 	// 	NumOfHosts: 1,
 	// 	HeaderMsg:  "",
-	// 	HostMsg:    "Resolving %s via ns1.sandbox.alphasoc.xyz",
+	// 	HostMsg:    "Resolving %s via dns.sandbox-services.alphasoc.xyz",
 	// 	Timeout:    1 * time.Second,
 	// 	// FailMsg:    "Test failed (queries to arbitrary DNS servers are blocked)",
 	// 	SuccessMsg: "Success! DNS hijacking is possible in this environment",
@@ -279,6 +289,32 @@ var allModules = []Module{
 		HostMsg:    "Simulating ICMP tunneling via %s",
 		Timeout:    20 * time.Second,
 	},
+	Module{
+		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("imposter", wisdom.HostTypeDNS), new(simulator.DNSResolveSimulator)),
+		Name:       "imposter",
+		Pipeline:   PipelineDNS,
+		NumOfHosts: 5,
+		HeaderMsg:  "Resolving random imposter domains",
+		Timeout:    1 * time.Second,
+	},
+	Module{
+		Module:     simulator.NewSSHTransfer(),
+		Name:       "ssh-transfer",
+		Pipeline:   PipelineIP,
+		NumOfHosts: 1,
+		HeaderMsg:  "Preparing to send randomly generated data to a standard SSH port",
+		Timeout:    5 * time.Minute,
+		Fast:       true,
+	},
+	Module{
+		Module:     simulator.NewSSHExfil(),
+		Name:       "ssh-exfil",
+		Pipeline:   PipelineIP,
+		NumOfHosts: 1,
+		HeaderMsg:  "Preparing to send randomly generated data to a non-standard SSH port",
+		Timeout:    5 * time.Minute,
+		Fast:       true,
+	},
 }
 
 type Simulation struct {
@@ -300,15 +336,59 @@ const (
 	msgPrefixErrorRecover = "FATAL: Module terminated: "
 )
 
-func run(sims []*Simulation, extIP net.IP, size int) error {
-	printWelcome(extIP.String())
+// getDefaultDNSIntf runs a DNS probe using default system resolver and returns the IP of
+// the interface used and an error.  Thanks @tg.
+func getDefaultDNSIntf() (string, error) {
+	timeout := 10 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	var defaultDNSServer string
+	r := &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			// we can capture the address here
+			defaultDNSServer = address
+			// still use the default dialer
+			var d net.Dialer
+			return d.DialContext(ctx, network, address)
+		},
+	}
+	_, err := r.LookupHost(ctx, "alphasoc.com")
+	if err != nil {
+		return "", err
+	}
+	conn, err := net.DialTimeout("udp", defaultDNSServer, timeout)
+	if err != nil {
+		return "", err
+	}
+	dnsIntfIP, _, err := net.SplitHostPort(conn.LocalAddr().String())
+	if err != nil {
+		return "", err
+	}
+	return dnsIntfIP, nil
+}
+
+func run(sims []*Simulation, bind simulator.BindAddr, size int) error {
+	// If user override on iface, both IP and DNS traffic will flow through bind.Addr.
+	// NOTE: not passing the DNS server to printWelcome(), as it may be confusing in cases
+	// where there are multiple nameservers configured (ie. resolver errors will carry
+	// the address of the last queried nameserver).
+	defaultDNSIntfIP, err := getDefaultDNSIntf()
+	if err != nil {
+		return fmt.Errorf("Failed DNS probe: %v", err)
+	}
+	if bind.UserSet {
+		printWelcome(bind.String(), bind.String())
+	} else {
+		printWelcome(bind.String(), defaultDNSIntfIP)
+	}
 	printHeader()
 
 	for simN, sim := range sims {
 		fmt.Print("\n")
 
 		okHosts := 0
-		err := sim.Init(extIP)
+		err := sim.Init(bind)
 		if err != nil {
 			printMsg(sim, msgPrefixErrorInit+fmt.Sprint(err))
 		} else {
@@ -346,8 +426,9 @@ func run(sims []*Simulation, extIP net.IP, size int) error {
 							okHosts++
 						}
 
-						// wait until context expires (unless fast mode or very last iteration)
-						if !fast && ((simN < len(sims)-1) || (hostN < len(hosts)-1)) {
+						// Wait until context expires, unless fast global mode,
+						// fast module (default false) or very last iteration.
+						if !(fast || sim.Fast) && ((simN < len(sims)-1) || (hostN < len(hosts)-1)) {
 							<-ctx.Done()
 						}
 

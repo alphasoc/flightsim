@@ -3,7 +3,6 @@ package simulator
 import (
 	"context"
 	"fmt"
-	"net"
 	"strings"
 	"time"
 
@@ -19,6 +18,7 @@ import (
 
 // Tunnel simulator.
 type EncryptedDNS struct {
+	bind  BindAddr
 	Proto encdns.Protocol
 }
 
@@ -27,9 +27,9 @@ func NewEncryptedDNS() *EncryptedDNS {
 	return &EncryptedDNS{}
 }
 
-func (s *EncryptedDNS) Init(bind net.IP) error {
+func (s *EncryptedDNS) Init(bind BindAddr) error {
 	// TODO: along with issues/39, bind if iface specififed.
-	_ = bind
+	s.bind = bind
 	return nil
 }
 

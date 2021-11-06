@@ -12,7 +12,7 @@ import (
 
 // Tunnel simulator.
 type Tunnel struct {
-	bind net.IP
+	bind BindAddr
 }
 
 // NewTunnel creates dns tunnel simulator.
@@ -20,7 +20,7 @@ func NewTunnel() *Tunnel {
 	return &Tunnel{}
 }
 
-func (s *Tunnel) Init(bind net.IP) error {
+func (s *Tunnel) Init(bind BindAddr) error {
 	s.bind = bind
 	return nil
 }
@@ -30,8 +30,10 @@ func (Tunnel) Cleanup() {
 
 // Simulate lookups for txt records for give host.
 func (s *Tunnel) Simulate(ctx context.Context, host string) error {
-	d := &net.Dialer{
-		LocalAddr: &net.UDPAddr{IP: s.bind},
+	d := &net.Dialer{}
+	// Set the user overridden bind iface.
+	if s.bind.UserSet {
+		d.LocalAddr = &net.UDPAddr{IP: s.bind.Addr}
 	}
 	r := &net.Resolver{
 		PreferGo: true,
@@ -54,7 +56,7 @@ func (s *Tunnel) Simulate(ctx context.Context, host string) error {
 		defer cancelFn()
 		_, err := r.LookupTXT(ctx, fmt.Sprintf("%s.%s", label, host))
 
-		// ignore timeout and "no such host"
+		// Ignore "no such host".  Will ignore timeouts as well.
 		if err != nil && !isSoftError(err, "no such host") {
 			return err
 		}
