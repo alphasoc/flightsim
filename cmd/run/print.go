@@ -30,6 +30,11 @@ The current time is %s
 `, Version, ip, dnsIntfIP, time.Now().Format("02-Jan-06 15:04:05"))
 }
 
-func printGoodbye() {
-	fmt.Printf("\nAll done! Check your SIEM for alerts using the timestamps and details above.\n")
+func printGoodbye(simErrsDetected bool) {
+	if simErrsDetected {
+		fmt.Printf("\nAll done, but simulation errors occurred! ")
+	} else {
+		fmt.Printf("\nAll done! ")
+	}
+	fmt.Printf("Check your SIEM for alerts using the timestamps and details above.\n")
 }

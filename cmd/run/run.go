@@ -2,6 +2,7 @@ package run
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"net"
@@ -358,6 +359,22 @@ func getDefaultDNSIntf() (string, error) {
 	return dnsIntfIP, nil
 }
 
+// failedSimulationNames returns a sorted slice of failed simulation names extracted from
+// them sims map.
+func failedSimulationNames(sims map[string]bool) []string {
+	if len(sims) == 0 {
+		return nil
+	}
+	failedSims := make([]string, len(sims))
+	i := 0
+	for sim := range sims {
+		failedSims[i] = sim
+		i++
+	}
+	sort.Strings(failedSims)
+	return failedSims
+}
+
 func run(sims []*Simulation, bind simulator.BindAddr, size int) error {
 	// If user override on iface, both IP and DNS traffic will flow through bind.Addr.
 	// NOTE: not passing the DNS server to printWelcome(), as it may be confusing in cases
@@ -374,12 +391,15 @@ func run(sims []*Simulation, bind simulator.BindAddr, size int) error {
 	}
 	printHeader()
 
+	// Log failed simulations.
+	failedSims := make(map[string]bool)
 	for simN, sim := range sims {
 		fmt.Print("\n")
 
 		okHosts := 0
 		err := sim.Init(bind)
 		if err != nil {
+			failedSims[sim.Name()] = true
 			printMsg(sim, msgPrefixErrorInit+fmt.Sprint(err))
 		} else {
 			printMsg(sim, sim.HeaderMsg)
@@ -391,6 +411,7 @@ func run(sims []*Simulation, bind simulator.BindAddr, size int) error {
 
 			hosts, err := sim.Module.Hosts(sim.Scope, numOfHosts)
 			if err != nil {
+				failedSims[sim.Name()] = true
 				printMsg(sim, msgPrefixErrorInit+err.Error())
 				continue
 			}
@@ -412,6 +433,7 @@ func run(sims []*Simulation, bind simulator.BindAddr, size int) error {
 							// TODO: some module can return custom messages (e.g. hijack)
 							// and "ERROR" prefix shouldn't be printed then
 							printMsg(sim, fmt.Sprintf("ERROR: %s: %s", host, err.Error()))
+							failedSims[sim.Name()] = true
 						} else {
 							okHosts++
 						}
@@ -436,7 +458,14 @@ func run(sims []*Simulation, bind simulator.BindAddr, size int) error {
 		}
 		sim.Cleanup()
 	}
-
-	printGoodbye()
+	// Extract list of failed simulations and return as an error.
+	failedSimNames := failedSimulationNames(failedSims)
+	printGoodbye(failedSimNames != nil)
+	if failedSimNames != nil {
+		msg := fmt.Sprintf(
+			"The following simulations experienced errors: %v",
+			strings.Join(failedSimNames, ", "))
+		return errors.New(msg)
+	}
 	return nil
 }
