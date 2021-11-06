@@ -14,14 +14,18 @@ type Google struct {
 }
 
 // NewGoogle returns a *Google wrapping a Provider ready to use for DoH queries.
-func NewGoogle(ctx context.Context) *Google {
+func NewGoogle(ctx context.Context, bindIP net.IP) *Google {
 	p := Google{
 		Provider{
 			addr:     "dns.google:443",
 			queryURL: "https://dns.google/resolve",
+			bindIP:   bindIP,
 		},
 	}
 	d := net.Dialer{}
+	if bindIP != nil {
+		d.LocalAddr = &net.TCPAddr{IP: p.bindIP}
+	}
 	tr := &http.Transport{
 		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 			return d.DialContext(ctx, "tcp", p.addr)

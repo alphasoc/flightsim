@@ -15,8 +15,7 @@ type Protocol int
 
 // Supported DNS protocols.
 const (
-	Random Protocol = iota
-	DoH
+	DoH = iota
 	DoT
 	DNSCrypt
 )
@@ -25,8 +24,7 @@ var protocolMap map[string]Protocol = map[string]Protocol{"doh": DoH, "dot": DoT
 
 // RandomProtocol returns a random supported Protocol.
 func RandomProtocol() Protocol {
-	// Account for the fact that Protocol(0) == Random.
-	return Protocol(rand.Intn(len(protocolMap)) + 1)
+	return Protocol(rand.Intn(len(protocolMap)))
 }
 
 // A generic response wrapper for DoH/DoT, etc.

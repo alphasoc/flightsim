@@ -4,6 +4,7 @@ package providers
 import (
 	"context"
 	"math/rand"
+	"net"
 	"net/http"
 
 	"github.com/alphasoc/flightsim/simulator/encdns"
@@ -15,6 +16,7 @@ type Provider struct {
 	addr     string
 	queryURL string
 	client   *http.Client
+	bindIP   net.IP
 }
 
 // Providers supporting DoH.
@@ -26,18 +28,18 @@ var providers = []encdns.ProviderType{
 }
 
 // NewRandom returns a 'random' Queryable provider.
-func NewRandom(ctx context.Context) encdns.Queryable {
+func NewRandom(ctx context.Context, bindIP net.IP) encdns.Queryable {
 	pIdx := encdns.ProviderType(rand.Intn(len(providers)))
 	var p encdns.Queryable
 	switch providers[pIdx] {
 	case encdns.GoogleProvider:
-		p = NewGoogle(ctx)
+		p = NewGoogle(ctx, bindIP)
 	case encdns.CloudFlareProvider:
-		p = NewCloudFlare(ctx)
+		p = NewCloudFlare(ctx, bindIP)
 	case encdns.Quad9Provider:
-		p = NewQuad9(ctx)
+		p = NewQuad9(ctx, bindIP)
 	case encdns.OpenDNSProvider:
-		p = NewOpenDNS(ctx)
+		p = NewOpenDNS(ctx, bindIP)
 	}
 	return p
 }

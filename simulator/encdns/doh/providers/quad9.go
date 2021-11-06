@@ -14,14 +14,18 @@ type Quad9 struct {
 }
 
 // NewQuad9 returns a *Quad9 wrapping a Provider ready to use for DoH queries.
-func NewQuad9(ctx context.Context) *Quad9 {
+func NewQuad9(ctx context.Context, bindIP net.IP) *Quad9 {
 	p := Quad9{
 		Provider{
 			addr:     "dns.quad9.net:5053",
 			queryURL: "https://dns.quad9.net:5053/dns-query",
+			bindIP:   bindIP,
 		},
 	}
 	d := net.Dialer{}
+	if bindIP != nil {
+		d.LocalAddr = &net.TCPAddr{IP: p.bindIP}
+	}
 	tr := &http.Transport{
 		DialContext: func(ctxt context.Context, network, addr string) (net.Conn, error) {
 			return d.DialContext(ctx, "tcp", p.addr)

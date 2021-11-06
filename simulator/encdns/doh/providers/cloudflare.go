@@ -14,14 +14,18 @@ type CloudFlare struct {
 }
 
 // NewCloudFlare returns a *CloudFlare wrapping a Provider ready to use for DoH queries.
-func NewCloudFlare(ctx context.Context) *CloudFlare {
+func NewCloudFlare(ctx context.Context, bindIP net.IP) *CloudFlare {
 	p := CloudFlare{
 		Provider{
 			addr:     "cloudflare-dns.com:443",
 			queryURL: "https://cloudflare-dns.com/dns-query",
+			bindIP:   bindIP,
 		},
 	}
 	d := net.Dialer{}
+	if bindIP != nil {
+		d.LocalAddr = &net.TCPAddr{IP: p.bindIP}
+	}
 	tr := &http.Transport{
 		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 			return d.DialContext(ctx, "tcp", p.addr)

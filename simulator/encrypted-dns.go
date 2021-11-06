@@ -3,6 +3,7 @@ package simulator
 import (
 	"context"
 	"fmt"
+	"net"
 	"strings"
 	"time"
 
@@ -28,7 +29,6 @@ func NewEncryptedDNS() *EncryptedDNS {
 }
 
 func (s *EncryptedDNS) Init(bind BindAddr) error {
-	// TODO: along with issues/39, bind if iface specififed.
 	s.bind = bind
 	return nil
 }
@@ -36,15 +36,35 @@ func (s *EncryptedDNS) Init(bind BindAddr) error {
 func (EncryptedDNS) Cleanup() {
 }
 
-// randomProvider returns a random Protocol p Provider.
-func randomProvider(ctx context.Context, p encdns.Protocol) encdns.Queryable {
-	switch p {
+// HostMsg implements the HostMsgFormatter interface, returning a custom host message
+// string to be output by the run command.
+func (s *EncryptedDNS) HostMsg(host string) string {
+	var protoStr string
+	switch s.Proto {
 	case encdns.DoH:
-		return dohproviders.NewRandom(ctx)
+		protoStr = "DNS-over-HTTPS"
 	case encdns.DoT:
-		return dotproviders.NewRandom(ctx)
+		protoStr = "DNS-over-TLS"
 	case encdns.DNSCrypt:
-		return dnscryptproviders.NewRandom(ctx)
+		protoStr = "DNSCrypt"
+	}
+	return fmt.Sprintf("Simulating Encrypted DNS (%s) via *.%s", protoStr, host)
+}
+
+// randomProvider returns a random Protocol p Provider.
+func (s *EncryptedDNS) randomProvider(ctx context.Context) encdns.Queryable {
+	// If the user has set a bind interface via the -iface flag, have providers use it.
+	var bindIP net.IP
+	if s.bind.UserSet {
+		bindIP = s.bind.Addr
+	}
+	switch s.Proto {
+	case encdns.DoH:
+		return dohproviders.NewRandom(ctx, bindIP)
+	case encdns.DoT:
+		return dotproviders.NewRandom(ctx, bindIP)
+	case encdns.DNSCrypt:
+		return dnscryptproviders.NewRandom(ctx, bindIP)
 	default:
 		return nil
 	}
@@ -53,12 +73,8 @@ func randomProvider(ctx context.Context, p encdns.Protocol) encdns.Queryable {
 // Simulate lookups for txt records for give host.
 func (s *EncryptedDNS) Simulate(ctx context.Context, host string) error {
 	host = utils.FQDN(host)
-	// Select random Protocol (DoH/DoT/etc) if not specified on the commandline.
-	if s.Proto == encdns.Random {
-		s.Proto = encdns.RandomProtocol()
-	}
 	// Select a random Provider to be used in this simulation.
-	p := randomProvider(ctx, s.Proto)
+	p := s.randomProvider(ctx)
 	if p == nil {
 		return fmt.Errorf("invalid DNS protocol: unable to select provider")
 	}
@@ -78,7 +94,6 @@ func (s *EncryptedDNS) Simulate(ctx context.Context, host string) error {
 
 		// Ignore timeout.  In case of DoH, when err != nil, resp.Body has already been
 		// closed.
-		// TODO: Need timeout/dial error check from issues/39
 		if err != nil {
 			if isSoftError(err) {
 				continue
@@ -111,7 +126,6 @@ func (s *EncryptedDNS) Simulate(ctx context.Context, host string) error {
 			// TODO: If that's not the case, we can add more comprehensive response parsing.
 		case encdns.DNSCrypt:
 			dnsCryptResp, err := resp.DNSCryptResponse()
-			fmt.Println(dnsCryptResp)
 			if err != nil {
 				return fmt.Errorf("failed extracting DNSCrypt response: %v", err)
 			}
@@ -133,7 +147,9 @@ func (s *EncryptedDNS) Hosts(scope string, size int) ([]string, error) {
 		}
 		s.Proto = proto
 	} else {
-		s.Proto = encdns.Random
+		// Select random Protocol (DoH/DoT/etc) if not specified on the commandline.
+		// NOTE: doing this from Hosts() to display in HostMsg().
+		s.Proto = encdns.RandomProtocol()
 	}
 	return []string{"sandbox.alphasoc.xyz"}, nil
 }

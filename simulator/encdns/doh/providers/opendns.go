@@ -16,14 +16,18 @@ type OpenDNS struct {
 }
 
 // NewOpenDNS returns an *OpenDNS wrapping a Provider ready to use for DoH queries.
-func NewOpenDNS(ctx context.Context) *OpenDNS {
+func NewOpenDNS(ctx context.Context, bindIP net.IP) *OpenDNS {
 	p := OpenDNS{
 		Provider{
 			addr:     "doh.opendns.com:443",
 			queryURL: "https://doh.opendns.com/dns-query",
+			bindIP:   bindIP,
 		},
 	}
 	d := net.Dialer{}
+	if bindIP != nil {
+		d.LocalAddr = &net.TCPAddr{IP: p.bindIP}
+	}
 	tr := &http.Transport{
 		DialContext: func(ctxt context.Context, network, addr string) (net.Conn, error) {
 			return d.DialContext(ctx, "tcp", p.addr)
