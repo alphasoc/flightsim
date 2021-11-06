@@ -30,6 +30,8 @@ Cheatsheet:
     flightsim run c2                Simulate C2 traffic
     flightsim run c2:trickbot       Simulate C2 traffic for the TrickBot family
     flightsim run ssh-transfer:1GB  Simulate a 1GB SSH/SFTP file transfer
+    flightsim run encrypted-dns     Simulate encrypted DNS traffic over random protocol (DoH, DoT, DNSCrypt)
+    flightsim run encrypted-dns:doh Simulate encrypted DNS-over-HTTPS traffic
 
     flightsim get families:c2       Get a list of all c2 families
 `
