@@ -207,22 +207,6 @@ var allModules = []Module{
 		Timeout:    1 * time.Second,
 	},
 	Module{
-		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("alt_dns", wisdom.HostTypeDNS), new(simulator.DNSResolveSimulator)),
-		Name:       "alt-dns",
-		Pipeline:   PipelineDNS,
-		NumOfHosts: 5,
-		HeaderMsg:  "Preparing a random sample of alternate DNS root domains",
-		Timeout:    1 * time.Second,
-	},
-	Module{
-		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("tor_dns", wisdom.HostTypeDNS), new(simulator.DNSResolveSimulator)),
-		Name:       "tor-dns",
-		Pipeline:   PipelineDNS,
-		NumOfHosts: 5,
-		HeaderMsg:  "Preparing a random sample of suspicious Tor DNS domains",
-		Timeout:    1 * time.Second,
-	},
-	Module{
 		Module:     simulator.NewDGA(),
 		Name:       "dga",
 		Pipeline:   PipelineDNS,
