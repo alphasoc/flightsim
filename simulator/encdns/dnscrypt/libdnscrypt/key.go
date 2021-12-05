@@ -1,4 +1,4 @@
-package dnscrypt
+package libdnscrypt
 
 import (
 	"crypto/rand"

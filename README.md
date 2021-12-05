@@ -36,6 +36,8 @@ Cheatsheet:
     flightsim run c2                Simulate C2 traffic
     flightsim run c2:trickbot       Simulate C2 traffic for the TrickBot family
     flightsim run ssh-transfer:1GB  Simulate a 1GB SSH/SFTP file transfer
+    flightsim run encrypted-dns     Simulate encrypted DNS traffic via DNS-over-HTTPS, DNS-over-TLS and DNSCrypt
+    flightsim run encrypted-dns:doh Simulate encrypted DNS traffic via a specific protocol (DNS-over-HTTPS in this case)
 
     flightsim get families:c2       Get a list of all c2 families
 ```
@@ -58,7 +60,7 @@ To run all available modules, call:
 
 Available modules:
 
-        c2, dga, imposter, miner, scan, sink, spambot, ssh-exfil, ssh-transfer, tunnel-dns, tunnel-icmp
+        c2, dga, encrypted-dns, imposter, miner, scan, sink, spambot, ssh-exfil, ssh-transfer, tunnel-dns, tunnel-icmp
 
 Available flags:
   -dry
@@ -138,16 +140,17 @@ All done!
 
 The modules packaged with the utility are listed in the table below.
 
-| Module        | Description                                                                   |
-| ------------- | ----------------------------------------------------------------------------- |
-| `c2`          | Generates both DNS and IP traffic to a random list of known C2 destinations   |
-| `dga`         | Simulates DGA traffic using random labels and top-level domains               |
-| `imposter`    | Generates DNS traffic to a list of imposter domains                           |
-| `miner`       | Generates Stratum mining protocol traffic to known cryptomining pools         |
-| `scan`        | Performs a port scan of random RFC 5737 addresses using common TCP ports      |
-| `sink`        | Connects to known sinkholed destinations run by security researchers          |
-| `spambot`     | Resolves and connects to random Internet SMTP servers to simulate a spam bot  |
-| `ssh-exfil`   | Simulates an SSH file transfer to a service running on a non-standard SSH port|
-| `ssh-transfer`| Simulates an SSH file transfer to a service running on an SSH port            |
-| `tunnel-dns`  | Generates DNS tunneling requests to \*.sandbox.alphasoc.xyz                   |
-| `tunnel-icmp` | Generates ICMP tunneling traffic to an Internet service operated by AlphaSOC  |
+| Module          | Description                                                                      |
+| -------------   | -----------------------------------------------------------------------------    |
+| `c2`            | Generates both DNS and IP traffic to a random list of known C2 destinations      |
+| `dga`           | Simulates DGA traffic using random labels and top-level domains                  |
+| `encrypted-dns` | Simulates encrypted DNS traffic via DNS-over-HTTPS, DNS-over-TLS and/or DNSCrypt |
+| `imposter`      | Generates DNS traffic to a list of imposter domains                              |
+| `miner`         | Generates Stratum mining protocol traffic to known cryptomining pools            |
+| `scan`          | Performs a port scan of random RFC 5737 addresses using common TCP ports         |
+| `sink`          | Connects to known sinkholed destinations run by security researchers             |
+| `spambot`       | Resolves and connects to random Internet SMTP servers to simulate a spam bot     |
+| `ssh-exfil`     | Simulates an SSH file transfer to a service running on a non-standard SSH port   |
+| `ssh-transfer`  | Simulates an SSH file transfer to a service running on an SSH port               |
+| `tunnel-dns`    | Generates DNS tunneling requests to \*.sandbox.alphasoc.xyz                      |
+| `tunnel-icmp`   | Generates ICMP tunneling traffic to an Internet service operated by AlphaSOC     |

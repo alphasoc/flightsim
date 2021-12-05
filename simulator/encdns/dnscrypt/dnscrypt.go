@@ -1,51 +1,110 @@
-// Package dnscrypt provides DNSCrypt functionality.  It's pieced together from code found
-// in the reference DNSCrypt implementation (https://github.com/DNSCrypt/dnscrypt-proxy),
-// and in https://github.com/ameshkov/dnscrypt.git.  The goal was the provide FlightSim with
-// just enough DNSCrypt, without pulling in too many non-golang.org third party libs.
+// Package dnscrypt provides a DNSCrypt Resolver for TXT lookups.
 package dnscrypt
 
 import (
+	"bytes"
+	"context"
+	"io"
+	"net"
+	"time"
+
+	"github.com/alphasoc/flightsim/simulator/encdns/dns"
+	"github.com/alphasoc/flightsim/simulator/encdns/dnscrypt/libdnscrypt"
 	"golang.org/x/net/dns/dnsmessage"
 )
 
-// IsValidResponse returns a boolean indicating if the *dnsmessage.Message carries a
-// valid response.
-func IsValidResponse(r *dnsmessage.Message) bool {
-	return r.RCode == dnsmessage.RCodeSuccess && len(r.Answers) > 0
+type Resolver struct {
+	ctx    context.Context
+	sdns   string
+	bindIP net.IP
+	c      *libdnscrypt.Client
+	d      *net.Dialer
+	ri     *libdnscrypt.ResolverInfo
 }
 
-// Error constants.
-const (
-	// ErrEsVersion means that the cert contains unsupported es-version
-	ErrEsVersion = "unsupported es-version"
+// NewResolver returns a pointer to a DNScrypt Resolver.
+func NewResolver(ctx context.Context, network, sdns string, bindIP net.IP) *Resolver {
+	return &Resolver{
+		ctx:    ctx,
+		sdns:   sdns,
+		bindIP: bindIP,
+		c:      &libdnscrypt.Client{Net: network}}
+}
 
-	// ErrInvalidDNSStamp means an invalid DNS stamp
-	ErrInvalidDNSStamp = "invalid DNS stamp"
+// prepConnection grabs DNSCrypt resolver info and prepares the underlying connection.
+func (r *Resolver) prepConnection() error {
+	// Connection already prepped.
+	if r.ri != nil {
+		return nil
+	}
+	ri, err := r.c.Dial(r.ctx, r.sdns)
+	if err != nil {
+		return err
+	}
+	r.ri = ri
+	d := net.Dialer{}
+	if r.bindIP != nil {
+		if r.c.Net == "udp" {
+			d.LocalAddr = &net.UDPAddr{IP: r.bindIP}
+		} else {
+			d.LocalAddr = &net.TCPAddr{IP: r.bindIP}
+		}
+	}
+	r.d = &d
+	return nil
+}
 
-	// ErrCertTooShort means that it failed to deserialize cert, too short
-	ErrCertTooShort = "cert is too short"
-
-	// ErrCertMagic means an invalid cert magic
-	ErrCertMagic = "invalid cert magic"
-
-	// ErrInvalidQuery means that it failed to decrypt a DNSCrypt query
-	ErrInvalidQuery = "DNSCrypt query is invalid and cannot be decrypted"
-
-	// ErrInvalidResponse means that it failed to decrypt a DNSCrypt response
-	ErrInvalidResponse = "DNSCrypt response is invalid and cannot be decrypted"
-
-	// ErrInvalidClientMagic means that client-magic does not match
-	ErrInvalidClientMagic = "DNSCrypt query contains invalid client magic"
-
-	// ErrInvalidPadding means that it failed to unpad a query
-	ErrInvalidPadding = "invalid padding"
-
-	// ErrQueryTooLarge means that the DNS query is larger than max allowed size
-	ErrQueryTooLarge = "DNSCrypt query is too large"
-
-	// ErrInvalidResolverMagic means that server-magic does not match
-	ErrInvalidResolverMagic = "DNSCrypt response contains invalid resolver magic"
-
-	// ErrInvalidDNSResponse is an invalid DNS reponse error.
-	ErrInvalidDNSResponse = "invalid DNS response"
-)
+// LookupTXT performs a DNSCrypt TXT lookup of host, returning TXT records as a slice of
+// strings and an error.
+func (r *Resolver) LookupTXT(ctx context.Context, host string) ([]string, error) {
+	// On an initial lookup, get resolver information and server certificate.  Also,
+	// prepare the dialer.
+	var err error
+	err = r.prepConnection()
+	if err != nil {
+		return nil, err
+	}
+	// Dial the actual server address obtained in ResliverInfo.
+	conn, err := r.d.DialContext(r.ctx, r.c.Net, r.ri.ServerAddress)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	var dnsReq []byte
+	if r.c.Net == "udp" {
+		dnsReq, err = dns.NewUDPRequest(host, dnsmessage.TypeTXT)
+	} else {
+		dnsReq, err = dns.NewTCPRequest(host, dnsmessage.TypeTXT)
+	}
+	if err != nil {
+		return nil, err
+	}
+	// Encrypt the DNS wire protocol packet, and send.
+	encryptedDnsReq, err := r.c.Encrypt(dnsReq, r.ri)
+	if err != nil {
+		return nil, err
+	}
+	_, err = conn.Write(encryptedDnsReq)
+	if err != nil {
+		return nil, err
+	}
+	// Set read deadline based on ctx.
+	if deadline, ok := ctx.Deadline(); ok {
+		conn.SetReadDeadline(deadline)
+	} else {
+		conn.SetReadDeadline(time.Time{})
+	}
+	// Read the response, decrypting, and extracting the TXT records.
+	var buf bytes.Buffer
+	n, err := io.Copy(&buf, conn)
+	// IO timeouts may be encountered.  If we managed to read anything, try to decrypt.
+	if err != nil && n == 0 {
+		return nil, err
+	}
+	resp := make([]byte, buf.Len())
+	resp, err = r.c.Decrypt(buf.Bytes(), r.ri)
+	if err != nil {
+		return nil, err
+	}
+	return dns.ParseTXTResponse(resp)
+}

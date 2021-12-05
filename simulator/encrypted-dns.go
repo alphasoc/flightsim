@@ -4,152 +4,184 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/alphasoc/flightsim/simulator/encdns"
 	"github.com/alphasoc/flightsim/simulator/encdns/dnscrypt"
-	dnscryptproviders "github.com/alphasoc/flightsim/simulator/encdns/dnscrypt/providers"
 	"github.com/alphasoc/flightsim/simulator/encdns/doh"
-	dohproviders "github.com/alphasoc/flightsim/simulator/encdns/doh/providers"
 	"github.com/alphasoc/flightsim/simulator/encdns/dot"
-	dotproviders "github.com/alphasoc/flightsim/simulator/encdns/dot/providers"
 	"github.com/alphasoc/flightsim/utils"
+	"github.com/alphasoc/flightsim/wisdom"
 )
 
-// Tunnel simulator.
-type EncryptedDNS struct {
-	bind  BindAddr
-	Proto encdns.Protocol
+type Protocol string
+
+const DoH = Protocol("doh")
+const DoT = Protocol("dot")
+const DCr = Protocol("dnscrypt")
+
+var knownProtos = []Protocol{DoH, DoT, DCr}
+var knownProtoStrs = []string{string(DoH), string(DoT), string(DCr)}
+var protoLongNames = map[Protocol]string{
+	DoH: "DNS-over-HTTPS",
+	DoT: "DNS-over-TLS",
+	DCr: "DNSCrypt",
 }
 
-// NewTunnel creates dns tunnel simulator.
+// Encrypted DNS simulator.
+type EncryptedDNS struct {
+	bind      BindAddr
+	protos    []Protocol
+	resolvers []encdns.Resolver
+}
+
+// NewEncryptedDNS creates an encrypted DNS simulator.
 func NewEncryptedDNS() *EncryptedDNS {
 	return &EncryptedDNS{}
 }
 
+// Init sets the bind address for the simulator.
 func (s *EncryptedDNS) Init(bind BindAddr) error {
 	s.bind = bind
 	return nil
 }
 
+// Cleanup does nothing at the moment.
 func (EncryptedDNS) Cleanup() {
 }
 
 // HostMsg implements the HostMsgFormatter interface, returning a custom host message
 // string to be output by the run command.
 func (s *EncryptedDNS) HostMsg(host string) string {
-	var protoStr string
-	switch s.Proto {
-	case encdns.DoH:
-		protoStr = "DNS-over-HTTPS"
-	case encdns.DoT:
-		protoStr = "DNS-over-TLS"
-	case encdns.DNSCrypt:
-		protoStr = "DNSCrypt"
+	// User has selected a specific protocol on the commandline, else all protocols
+	// will be used.
+	if len(s.protos) == 1 {
+		return fmt.Sprintf(
+			"Simulating Encrypted DNS (%v) via *.%s",
+			protoLongNames[s.protos[0]],
+			host)
 	}
-	return fmt.Sprintf("Simulating Encrypted DNS (%s) via *.%s", protoStr, host)
+	return fmt.Sprintf("Simulating Encrypted DNS via *.%s", host)
 }
 
-// randomProvider returns a random Protocol p Provider.
-func (s *EncryptedDNS) randomProvider(ctx context.Context) encdns.Queryable {
-	// If the user has set a bind interface via the -iface flag, have providers use it.
+const numResolversPerProto = 2
+
+// initResolvers initializes resolvers to be used for DNS queries.  The resolvers are
+// stored in the s.resolvers slice.  An error is returned.
+func (s *EncryptedDNS) initResolvers(ctx context.Context) error {
 	var bindIP net.IP
 	if s.bind.UserSet {
 		bindIP = s.bind.Addr
 	}
-	switch s.Proto {
-	case encdns.DoH:
-		return dohproviders.NewRandom(ctx, bindIP)
-	case encdns.DoT:
-		return dotproviders.NewRandom(ctx, bindIP)
-	case encdns.DNSCrypt:
-		return dnscryptproviders.NewRandom(ctx, bindIP)
-	default:
-		return nil
+	for _, p := range s.protos {
+		switch p {
+		case DoH:
+			servers, err := wisdom.EncryptedDNSServers(string(DoH), numResolversPerProto)
+			if err != nil {
+				return err
+			}
+			for _, srv := range servers {
+				addr := net.JoinHostPort(srv.Domain, strconv.Itoa(srv.Port))
+				if srv.Extras.DOHWireProto != "" {
+					s.resolvers = append(s.resolvers, doh.NewWireResolver(
+						ctx,
+						addr,
+						srv.Extras.DOHQueryURL,
+						srv.Extras.DOHQueryParams,
+						srv.Extras.DOHWireProto,
+						bindIP))
+				} else {
+					s.resolvers = append(s.resolvers, doh.NewJSONResolver(
+						ctx,
+						addr,
+						srv.Extras.DOHQueryURL,
+						srv.Extras.DOHQueryParams,
+						bindIP))
+				}
+			}
+		case DoT:
+			servers, err := wisdom.EncryptedDNSServers(string(DoT), numResolversPerProto)
+			if err != nil {
+				return err
+			}
+			for _, srv := range servers {
+				addr := net.JoinHostPort(srv.Domain, strconv.Itoa(srv.Port))
+				s.resolvers = append(s.resolvers, dot.NewResolver(ctx, addr, bindIP))
+			}
+		case DCr:
+			servers, err := wisdom.EncryptedDNSServers(string(DCr), numResolversPerProto)
+			if err != nil {
+				return err
+			}
+			for _, srv := range servers {
+				s.resolvers = append(
+					s.resolvers,
+					dnscrypt.NewResolver(ctx, srv.Protocol, srv.Extras.DNSCryptSDNS, bindIP))
+			}
+		}
 	}
+	return nil
 }
 
 // Simulate lookups for txt records for give host.
 func (s *EncryptedDNS) Simulate(ctx context.Context, host string) error {
 	host = utils.FQDN(host)
-	// Select a random Provider to be used in this simulation.
-	p := s.randomProvider(ctx)
-	if p == nil {
-		return fmt.Errorf("invalid DNS protocol: unable to select provider")
+	// At this point we know what protocols we want to use in the simulation.  For each
+	// protocol, obtain a set of DNS servers and from them initialize appropriate
+	// resolvers.
+	err := s.initResolvers(ctx)
+	if err != nil {
+		return err
 	}
-
 	for {
-		// keep going until the passed context expires
+		// Keep going until the passed context expires.
 		select {
 		case <-ctx.Done():
 			return nil
 		default:
 		}
+		// Round robin over the resolvers
 		label := strings.ToLower(utils.RandString(30))
-
-		ctx, cancelFn := context.WithTimeout(ctx, 200*time.Millisecond)
-		defer cancelFn()
-		resp, err := p.QueryTXT(ctx, fmt.Sprintf("%s.%s", label, host))
-
-		// Ignore timeout.  In case of DoH, when err != nil, resp.Body has already been
-		// closed.
-		if err != nil {
-			if isSoftError(err) {
-				continue
-			}
-			return err
-		}
-		// Light verification of resp.
-		switch s.Proto {
-		case encdns.DoH:
-			dohResp, err := resp.DOHResponse()
+		toResolve := fmt.Sprintf("%s.%s", label, host)
+		for _, r := range s.resolvers {
+			ctx, cancelFn := context.WithTimeout(ctx, 200*time.Millisecond)
+			defer cancelFn()
+			// Don't actuall care about the responses.
+			_, err := r.LookupTXT(ctx, toResolve)
+			// Ignore timeout.
 			if err != nil {
-				return fmt.Errorf("failed extracting DoH response: %v", err)
-			}
-			if !doh.IsValidResponse(dohResp) {
-				dohResp.Body.Close()
-				return fmt.Errorf("bad response: %v", dohResp.Status)
-			}
-			// All good.  We don't care anymore about the actual response.  Just close it.
-			dohResp.Body.Close()
-		case encdns.DoT:
-			dotResp, err := resp.DOTResponse()
-			if err != nil {
-				return fmt.Errorf("failed extracting DoT response: %v", err)
-			}
-			if !dot.IsValidResponse(dotResp) {
-				return fmt.Errorf("bad response: %v", dotResp)
-			}
-			// All good.  We don't care anymore about the actual response
-			// (ie. no such host, etc).
-			// TODO: If that's not the case, we can add more comprehensive response parsing.
-		case encdns.DNSCrypt:
-			dnsCryptResp, err := resp.DNSCryptResponse()
-			if err != nil {
-				return fmt.Errorf("failed extracting DNSCrypt response: %v", err)
-			}
-			if !dnscrypt.IsValidResponse(dnsCryptResp) {
-				return fmt.Errorf("bad response: %v", dnsCryptResp)
+				if !isSoftError(err) {
+					return err
+				}
 			}
 		}
-		<-ctx.Done()
 	}
+}
+
+func scopeToProto(s string) (Protocol, error) {
+	for _, p := range knownProtos {
+		if s == string(p) {
+			return p, nil
+		}
+	}
+	return Protocol(""), fmt.Errorf("unknown protocol: '%v'", s)
 }
 
 // Hosts returns random generated hosts to alphasoc sandbox.
 func (s *EncryptedDNS) Hosts(scope string, size int) ([]string, error) {
 	if scope != "" {
-		// Protocol parsing (DoH/DoT/etc) from commandline.
-		proto, err := encdns.ParseScope(scope)
+		p, err := scopeToProto(scope)
 		if err != nil {
-			return []string{}, err
+			return nil, fmt.Errorf(
+				"%v: protocol must be one of: %v",
+				err,
+				strings.Join(knownProtoStrs, ", "))
 		}
-		s.Proto = proto
+		s.protos = append(s.protos, p)
 	} else {
-		// Select random Protocol (DoH/DoT/etc) if not specified on the commandline.
-		// NOTE: doing this from Hosts() to display in HostMsg().
-		s.Proto = encdns.RandomProtocol()
+		s.protos = knownProtos
 	}
 	return []string{"sandbox.alphasoc.xyz"}, nil
 }

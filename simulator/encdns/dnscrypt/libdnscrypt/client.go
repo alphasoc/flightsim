@@ -1,4 +1,4 @@
-package dnscrypt
+package libdnscrypt
 
 import (
 	"bytes"
@@ -9,12 +9,48 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alphasoc/flightsim/simulator/encdns"
+	"github.com/alphasoc/flightsim/simulator/encdns/dns"
 	dnsstamps "github.com/jedisct1/go-dnsstamps"
 	"golang.org/x/net/dns/dnsmessage"
 )
 
-// Basic Client struct.  Wrapped by providers.
+// Error constants.
+const (
+	// ErrEsVersion means that the cert contains unsupported es-version
+	ErrEsVersion = "unsupported es-version"
+
+	// ErrInvalidDNSStamp means an invalid DNS stamp
+	ErrInvalidDNSStamp = "invalid DNS stamp"
+
+	// ErrCertTooShort means that it failed to deserialize cert, too short
+	ErrCertTooShort = "cert is too short"
+
+	// ErrCertMagic means an invalid cert magic
+	ErrCertMagic = "invalid cert magic"
+
+	// ErrInvalidQuery means that it failed to decrypt a DNSCrypt query
+	ErrInvalidQuery = "DNSCrypt query is invalid and cannot be decrypted"
+
+	// ErrInvalidResponse means that it failed to decrypt a DNSCrypt response
+	ErrInvalidResponse = "DNSCrypt response is invalid and cannot be decrypted"
+
+	// ErrInvalidClientMagic means that client-magic does not match
+	ErrInvalidClientMagic = "DNSCrypt query contains invalid client magic"
+
+	// ErrInvalidPadding means that it failed to unpad a query
+	ErrInvalidPadding = "invalid padding"
+
+	// ErrQueryTooLarge means that the DNS query is larger than max allowed size
+	ErrQueryTooLarge = "DNSCrypt query is too large"
+
+	// ErrInvalidResolverMagic means that server-magic does not match
+	ErrInvalidResolverMagic = "DNSCrypt response contains invalid resolver magic"
+
+	// ErrInvalidDNSResponse is an invalid DNS reponse error.
+	ErrInvalidDNSResponse = "invalid DNS response"
+)
+
+// Basic Client struct.  Wrapped by Resolvers.
 type Client struct {
 	Net string
 }
@@ -45,7 +81,7 @@ func (c *Client) fetchCert(ctx context.Context, stamp dnsstamps.ServerStamp) (*C
 		providerName = providerName + "."
 	}
 
-	dnsReq, err := encdns.NewUDPRequest(providerName, dnsmessage.TypeTXT)
+	dnsReq, err := dns.NewUDPRequest(providerName, dnsmessage.TypeTXT)
 	if err != nil {
 		return nil, err
 	}
@@ -123,15 +159,10 @@ func (c *Client) Encrypt(m []byte, resolverInfo *ResolverInfo) ([]byte, error) {
 		ClientMagic: resolverInfo.ResolverCert.ClientMagic,
 		ClientPk:    resolverInfo.PublicKey,
 	}
-	// query, err := m.Pack()
-	// if err != nil {
-	// 	return nil, err
-	// }
 	b, err := q.Encrypt(m, resolverInfo.SharedKey)
 	if len(b) > MinMsgSize {
 		return nil, errors.New(ErrQueryTooLarge)
 	}
-
 	return b, err
 }
 
