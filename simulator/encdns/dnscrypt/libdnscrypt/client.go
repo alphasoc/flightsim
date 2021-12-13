@@ -1,3 +1,8 @@
+// Package libdnscrypt provides the main functionality behind DNSCrypt.   It's pieced
+// together from code found in the reference DNSCrypt implementation
+// (https://github.com/DNSCrypt/dnscrypt-proxy), and in
+// https://github.com/ameshkov/dnscrypt.git.  The goal was the provide FlightSim with
+// just enough DNSCrypt, without pulling in too many non-golang.org third party libs.
 package libdnscrypt
 
 import (
