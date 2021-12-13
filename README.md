@@ -58,7 +58,7 @@ To run all available modules, call:
 
 Available modules:
 
-        c2, dga, imposter, miner, scan, sink, spambot, ssh-exfil, ssh-transfer, tunnel-dns, tunnel-icmp
+        c2, dga, imposter, miner, scan, sink, spambot, ssh-exfil, ssh-transfer, tor, tunnel-dns, tunnel-icmp
 
 Available flags:
   -dry
@@ -138,16 +138,17 @@ All done!
 
 The modules packaged with the utility are listed in the table below.
 
-| Module        | Description                                                                   |
-| ------------- | ----------------------------------------------------------------------------- |
-| `c2`          | Generates both DNS and IP traffic to a random list of known C2 destinations   |
-| `dga`         | Simulates DGA traffic using random labels and top-level domains               |
-| `imposter`    | Generates DNS traffic to a list of imposter domains                           |
-| `miner`       | Generates Stratum mining protocol traffic to known cryptomining pools         |
-| `scan`        | Performs a port scan of random RFC 5737 addresses using common TCP ports      |
-| `sink`        | Connects to known sinkholed destinations run by security researchers          |
-| `spambot`     | Resolves and connects to random Internet SMTP servers to simulate a spam bot  |
-| `ssh-exfil`   | Simulates an SSH file transfer to a service running on a non-standard SSH port|
-| `ssh-transfer`| Simulates an SSH file transfer to a service running on an SSH port            |
-| `tunnel-dns`  | Generates DNS tunneling requests to \*.sandbox.alphasoc.xyz                   |
-| `tunnel-icmp` | Generates ICMP tunneling traffic to an Internet service operated by AlphaSOC  |
+| Module         | Description                                                                    |
+| -------------  | -----------------------------------------------------------------------------  |
+| `c2`           | Generates both DNS and IP traffic to a random list of known C2 destinations    |
+| `dga`          | Simulates DGA traffic using random labels and top-level domains                |
+| `imposter`     | Generates DNS traffic to a list of imposter domains                            |
+| `miner`        | Generates Stratum mining protocol traffic to known cryptomining pools          |
+| `scan`         | Performs a port scan of random RFC 5737 addresses using common TCP ports       |
+| `sink`         | Connects to known sinkholed destinations run by security researchers           |
+| `spambot`      | Resolves and connects to random Internet SMTP servers to simulate a spam bot   |
+| `ssh-exfil`    | Simulates an SSH file transfer to a service running on a non-standard SSH port |
+| `ssh-transfer` | Simulates an SSH file transfer to a service running on an SSH port             |
+| `tor`          | Simulates Tor relay connections                                                |
+| `tunnel-dns`   | Generates DNS tunneling requests to \*.sandbox.alphasoc.xyz                    |
+| `tunnel-icmp`  | Generates ICMP tunneling traffic to an Internet service operated by AlphaSOC   |
