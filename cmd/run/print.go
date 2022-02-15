@@ -22,6 +22,9 @@ func printMsg(s *Simulation, msg string) {
 }
 
 func printWelcome(ip, dnsIntfIP string) {
+	if dnsIntfIP == "" {
+		dnsIntfIP = "UNKNOWN, system defaults will be used"
+	}
 	fmt.Printf(`
 AlphaSOC Network Flight Simulator™ %s (https://github.com/alphasoc/flightsim)
 The address of the network interface for IP traffic is %s
