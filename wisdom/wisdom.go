@@ -102,6 +102,58 @@ func (h *WisdomHosts) Hosts(scope string, size int) ([]string, error) {
 	return hosts, nil
 }
 
+type WisdomEncryptedDNSServer struct {
+	Domain   string
+	IP       string
+	Port     int
+	Protocol string
+	Type     string
+	Extras   struct {
+		DOHQueryURL    string
+		DOHQueryParams []string
+		DOHWireProto   string
+		DNSCryptSDNS   string
+	}
+}
+
+// EncryptedDNSServers queries open-wisdom for encrypted-DNS servers for a given dnsProtocol,
+// returning a slice of WisdomEncryptedDNSServer and an error.
+func EncryptedDNSServers(dnsProtocol string, size int) ([]WisdomEncryptedDNSServer, error) {
+	reqURL, err := url.Parse("https://api.open.wisdom.alphasoc.net/v2/items")
+	if err != nil {
+		return nil, err
+	}
+	q := reqURL.Query()
+	q.Set("category", dnsProtocol)
+	q.Set("min", strconv.Itoa(size))
+
+	var parsed struct {
+		Items []WisdomEncryptedDNSServer
+	}
+	reqURL.RawQuery = q.Encode()
+	b, err := query(reqURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(b, &parsed); err != nil {
+		return nil, errors.Wrapf(err, "api.open.wisdom.alphasoc.net parse body error")
+	}
+
+	// Randomize.
+	var servers []WisdomEncryptedDNSServer
+	for _, i := range rand.Perm(len(parsed.Items)) {
+		if len(servers) >= size {
+			break
+		}
+		p := parsed.Items[i]
+		// ie. doh, dot, dnscrypt
+		p.Type = dnsProtocol
+		servers = append(servers, p)
+	}
+	return servers, nil
+}
+
 // Families queries the wisdom families API, returning families for a given category
 // as a slice of strings, along with an error.
 func Families(category string) ([]string, error) {

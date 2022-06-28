@@ -40,25 +40,26 @@ type Creator interface {
 	New(ctx context.Context, args ...string) (Process, error)
 }
 
-type exeProcessCreator struct {
-	exePath string
-}
+type CmdCreatorFunc func(ctx context.Context, args ...string) (*exec.Cmd, error)
 
 // NewCreator creates a Creator for external Tor process execution based on the
 // given exe path.
 func NewCreator(exePath string) Creator {
-	return &exeProcessCreator{exePath}
+	return CmdCreatorFunc(func(ctx context.Context, args ...string) (*exec.Cmd, error) {
+		cmd := exec.CommandContext(ctx, exePath, args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd, nil
+	})
 }
 
 type exeProcess struct {
 	*exec.Cmd
 }
 
-func (e *exeProcessCreator) New(ctx context.Context, args ...string) (Process, error) {
-	cmd := exec.CommandContext(ctx, e.exePath, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return &exeProcess{cmd}, nil
+func (c CmdCreatorFunc) New(ctx context.Context, args ...string) (Process, error) {
+	cmd, err := c(ctx, args...)
+	return &exeProcess{cmd}, err
 }
 
 // ErrControlConnUnsupported is returned by Process.EmbeddedControlConn when

@@ -252,6 +252,16 @@ var allModules = []Module{
 		Timeout: 10 * time.Second,
 	},
 	Module{
+		Module:     simulator.NewEncryptedDNS(),
+		Name:       "encrypted-dns",
+		Pipeline:   PipelineDNS,
+		NumOfHosts: 1,
+		// HeaderMsg:  "Preparing DNS tunnel hostnames",
+		HostMsg: "Simulating Encrypted DNS via *.%s",
+		Timeout: 10 * time.Second,
+	},
+
+	Module{
 		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("cryptomining", wisdom.HostTypeIP), simulator.NewStratumMiner()),
 		Name:       "miner",
 		Pipeline:   PipelineIP,
