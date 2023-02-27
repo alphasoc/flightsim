@@ -144,7 +144,7 @@ The modules packaged with the utility are listed in the table below.
 | `dga`         | Simulates DGA traffic using random labels and top-level domains                  |
 | `imposter`    | Generates DNS traffic to a list of imposter domains                              |
 | `miner`       | Generates Stratum mining protocol traffic to known cryptomining pools            |
-| `oast`        | Simulates traffic made by a tool designed for detecting out-of-band interactions |
+| `oast`        | Simulates out-of-band application security testing (OAST) traffic                |
 | `scan`        | Performs a port scan of random RFC 5737 addresses using common TCP ports         |
 | `sink`        | Connects to known sinkholed destinations run by security researchers             |
 | `spambot`     | Resolves and connects to random Internet SMTP servers to simulate a spam bot     |
