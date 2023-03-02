@@ -288,6 +288,14 @@ var allModules = []Module{
 		Timeout:    1 * time.Second,
 	},
 	Module{
+		Module:     simulator.NewOAST(),
+		Name:       "oast",
+		Pipeline:   PipelineDNS,
+		NumOfHosts: 1,
+		HeaderMsg:  "Preparing to simulate OAST traffic",
+		Timeout:    3 * time.Second,
+	},
+	Module{
 		Module:     simulator.NewSSHTransfer(),
 		Name:       "ssh-transfer",
 		Pipeline:   PipelineIP,
