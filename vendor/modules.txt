@@ -9,6 +9,10 @@ github.com/cretz/bine/torutil/ed25519/internal/edwards25519
 # github.com/inhies/go-bytesize v0.0.0-20201103132853-d0aed0d254f8
 ## explicit
 github.com/inhies/go-bytesize
+# github.com/lrstanley/girc v0.0.0-20230507010347-3c8fa7715074
+## explicit; go 1.18
+github.com/lrstanley/girc
+github.com/lrstanley/girc/internal/ctxgroup
 # github.com/pkg/errors v0.8.1
 ## explicit
 github.com/pkg/errors

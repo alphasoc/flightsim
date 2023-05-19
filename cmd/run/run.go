@@ -313,6 +313,15 @@ var allModules = []Module{
 		Timeout:    5 * time.Minute,
 		Fast:       true,
 	},
+	Module{
+		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("irc", wisdom.HostTypeDNS), simulator.NewIRCClient()),
+		Name:       "irc",
+		Pipeline:   PipelineDNS,
+		NumOfHosts: 5,
+		HeaderMsg:  "Preparing a random sample of IRC server domains",
+		Timeout:    5 * time.Second,
+		Fast:       true,
+	},
 }
 
 type Simulation struct {
