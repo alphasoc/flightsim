@@ -10,14 +10,6 @@ import (
 	"github.com/lrstanley/girc"
 )
 
-const (
-	USER = "USER foo bar foo bar foo"
-	PASS = "PASS bar"
-	NICK = "NICK foo"
-
-	BUFFLEN = 16
-)
-
 // Custom dialer for the girc library
 type IRCDialer struct {
 	addr net.IP
