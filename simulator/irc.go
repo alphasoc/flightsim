@@ -2,6 +2,8 @@ package simulator
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
 	"math/rand"
 	"net"
 	"strconv"
@@ -10,31 +12,34 @@ import (
 	"github.com/lrstanley/girc"
 )
 
-// Custom dialer for the girc library
+// IRCDialer is a custom dialer for the girc library
+// to use the given context in simulation
 type IRCDialer struct {
-	addr net.IP
-	ctx  context.Context
+	BindIP net.IP
+
+	// context is used to set the deadline for the connection
+	Ctx context.Context
 }
 
-// IrcDialer has to implement the girc.Dialer interface
+// IRCDialer has to implement the girc.Dialer interface (Dial method)
 func (ircd *IRCDialer) Dial(network, address string) (net.Conn, error) {
-	d := net.Dialer{LocalAddr: &net.TCPAddr{IP: ircd.addr}}
-	conn, err := d.DialContext(ircd.ctx, network, address)
+	d := net.Dialer{LocalAddr: &net.TCPAddr{IP: ircd.BindIP}}
+	conn, err := d.DialContext(ircd.Ctx, network, address)
 
 	if conn != nil {
-		deadline, _ := ircd.ctx.Deadline()
+		deadline, _ := ircd.Ctx.Deadline()
 		err = conn.SetDeadline(deadline)
 	}
 
 	return conn, err
 }
 
-// IRC client simulator
+// IRCClient simulates IRC traffic
 type IRCClient struct {
 	bind BindAddr
 }
 
-// NewIrcClient creates new IrcClient simulator
+// NewIRCClient creates new IRCClient simulator
 func NewIRCClient() *IRCClient {
 	return &IRCClient{}
 }
@@ -48,38 +53,46 @@ func (IRCClient) Cleanup() {
 
 }
 
-// Simulate connection to IRC server (PING - PONG)
+// Simulate connection to IRC server
 func (irc *IRCClient) Simulate(ctx context.Context, dst string) error {
-	/*
-		TODO:
-		consider potential soft errors:
-		- connect: connection refused
-		- read: connection reset by peer ?
-		- You look like a bot ?
-		- Password mismatch ?
-		- no such host ?
-		- timed out waiting for a requested PING response ?
-		- i/o timeout ?
+	softErrors := []string{}
 
-	*/
+	// host is a domain name or IP address of the server
+	// portStr is a string representation of the server port
+	var host, portStr string
 
-	softErrors := []string{"connect: connection refused"}
+	// port is a port number of the server
+	var port int
+	var err error
 
+	// If error occurs we assume it's a domain name without port
+	if host, portStr, err = net.SplitHostPort(dst); err != nil {
+		host = dst
+		port = 6667
+	} else {
+		// Otherwise we assume it's an IP:port pair
+		if port, err = strconv.Atoi(portStr); err != nil {
+			return fmt.Errorf("invalid port: %w", err)
+		}
+	}
+
+	// Create IRC client with given server address, port and credentials
 	client := girc.New(girc.Config{
-		Server:     dst,
-		Port:       6667,
-		Nick:       "nick-" + randomId(),
-		User:       "user-" + randomId(),
-		ServerPass: "password-" + randomId(),
+		Server:     host,
+		Port:       port,
+		Nick:       "nick" + randomHexID(5),
+		User:       "user" + randomHexID(5),
+		ServerPass: "password" + randomHexID(8),
 	})
 
+	// Disconnect on success
 	client.Handlers.Add(girc.CONNECTED, func(c *girc.Client, e girc.Event) {
 		client.Close()
 	})
 
-	dialer := &IRCDialer{ctx: ctx, addr: irc.bind.Addr}
+	dialer := &IRCDialer{Ctx: ctx, BindIP: irc.bind.Addr}
 
-	if err := client.DialerConnect(dialer); err != nil {
+	if err = client.DialerConnect(dialer); err != nil {
 		if isSoftError(err, softErrors...) {
 			return nil
 		}
@@ -89,13 +102,12 @@ func (irc *IRCClient) Simulate(ctx context.Context, dst string) error {
 	return nil
 }
 
-func randomId() string {
+// randomHexID generates a random hexstring of given lenght n
+func randomHexID(n int) string {
 	src := rand.NewSource(time.Now().Unix())
 	r := rand.New(src)
-	id := ""
-	for i := 0; i < 8; i++ {
-		id += strconv.Itoa(r.Intn(10))
-	}
+	buffer := make([]byte, n/2+1)
 
-	return id
+	_, _ = r.Read(buffer)
+	return hex.EncodeToString(buffer)[:n]
 }
