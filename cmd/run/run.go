@@ -333,6 +333,15 @@ var allModules = []Module{
 		Fast:       true,
 		HostMsg:    "Simulating IRC traffic to %s",
 	},
+	Module{
+		Module:     simulator.NewTelegramBot(),
+		Name:       "telegram-bot",
+		Pipeline:   PipelineDNS,
+		NumOfHosts: 1,
+		HeaderMsg:  "Preparing to simulate Telegram bot traffic",
+		Timeout:    3 * time.Second,
+		HostMsg:    "Simulating Telegram bot traffic to %s",
+	},
 }
 
 type Simulation struct {
