@@ -153,3 +153,4 @@ The modules packaged with the utility are listed in the table below.
 | `tunnel-dns`  | Generates DNS tunneling requests to \*.sandbox.alphasoc.xyz                      |
 | `tunnel-icmp` | Generates ICMP tunneling traffic to an Internet service operated by AlphaSOC     |
 | `irc`         | Simulates IRC traffic to a random list of known IRC servers                      |
+| `telegram-bot`| Simulates Telegram bot traffic to api.telegram.org                               |
