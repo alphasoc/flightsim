@@ -1,7 +1,6 @@
 package simulator
 
 import (
-	"bufio"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -13,23 +12,9 @@ import (
 )
 
 const (
-	URL                      = "https://api.telegram.org/bot"
-	FLIGHTSIM_TELEGRAM_TOKEN = "FLIGHTSIM_TELEGRAM_TOKEN"
+	URL                    = "https://api.telegram.org/bot"
+	FlightsimTelegramToken = "FLIGHTSIM_TELEGRAM_TOKEN"
 )
-
-func readHTTPResponseBody(response *http.Response) (string, error) {
-	var data string
-	scanner := bufio.NewScanner(response.Body)
-	for scanner.Scan() {
-		data += scanner.Text()
-	}
-
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-
-	return data, nil
-}
 
 func generateRandomTelegramBotToken() string {
 	src := rand.NewSource(time.Now().Unix())
@@ -59,10 +44,12 @@ type TelegramBot struct {
 
 // NewTelegramBot creates new TelegramBot simulator
 func NewTelegramBot() *TelegramBot {
-	token := os.Getenv(FLIGHTSIM_TELEGRAM_TOKEN)
+	token := os.Getenv(FlightsimTelegramToken)
 
 	if "" == token {
-		fmt.Println("WARNING: No token in environment variable FLIGHTSIM_TELEGRAM_TOKEN was found. Using random string instead.")
+		fmt.Print("WARNING: No token in environment variable FLIGHTSIM_TELEGRAM_TOKEN was found. Using random string instead. ")
+		fmt.Print("This will generate traffic to api.telegram.org but return an authentication error. ")
+		fmt.Println("However, the traffic should still be captured by your SIEM.")
 		token = generateRandomTelegramBotToken()
 	}
 
@@ -70,61 +57,65 @@ func NewTelegramBot() *TelegramBot {
 }
 
 // SendRequest sends a request to the Telegram Bot API,
-// takes as an argument a bot method name.
+// takes as an argument a bot method name and returns
+// response status code.
 // Bot methods list:
 // https://core.telegram.org/bots/api#available-methods
-func (tb *TelegramBot) SendRequest(botMethodName string) (string, error) {
+func (tb *TelegramBot) SendRequest(botMethodName string) (int, error) {
 	response, err := http.Get(tb.Url + botMethodName)
-	if err != nil {
-		return "", err
+	if err == nil {
+		response.Body.Close()
 	}
-	return readHTTPResponseBody(response)
+	return response.StatusCode, err
 }
 
-func (tb *TelegramBot) GetMe() (string, error) {
+func (tb *TelegramBot) GetMe() (int, error) {
 	return tb.SendRequest("getMe")
 }
 
-func (tb *TelegramBot) GetUpdates() (string, error) {
+func (tb *TelegramBot) GetUpdates() (int, error) {
 	return tb.SendRequest("getUpdates")
 }
 
-func (tb *TelegramBot) GetMyCommands() (string, error) {
+func (tb *TelegramBot) GetMyCommands() (int, error) {
 	return tb.SendRequest("getMyCommands")
 }
 
 // Simulate Telegram bot traffic
 func (tb *TelegramBot) Simulate(ctx context.Context, host string) error {
-	_, err := tb.GetMe()
-	if err != nil {
+	code, err := tb.GetMe()
+
+	// The following code block checks if err is nil.
+	// If err is not nil and the HTTP response code is different from 200,
+	// the function will return err without explicitly returning an error,
+	// since err is already nil.
+	if err != nil || code != 200 {
 		return err
 	}
 
-	_, err = tb.GetMyCommands()
-	if err != nil {
+	code, err = tb.GetMyCommands()
+	if err != nil || code != 200 {
 		return err
 	}
 
-	_, err = tb.GetUpdates()
-	if err != nil {
+	code, err = tb.GetUpdates()
+	if err != nil || code != 200 {
 		return err
 	}
 
 	return nil
 }
 
-// TelegramBot implements a Simulator interface but
-// doesn't need a bind address
-func (tb *TelegramBot) Init(bind BindAddr) error {
+// Init returns nil because TelegramBot module doesn't need a bind address.
+func (TelegramBot) Init(bind BindAddr) error {
 	return nil
 }
 
-func (tb *TelegramBot) Cleanup() {
+func (TelegramBot) Cleanup() {
 
 }
 
-// TelegramBot implements a Module interface but
-// only host that is used is api.telegram.org
-func (tb *TelegramBot) Hosts(scope string, size int) ([]string, error) {
+// Hosts returns a Telegram API domain name.
+func (TelegramBot) Hosts(scope string, size int) ([]string, error) {
 	return []string{"api.telegram.org"}, nil
 }
