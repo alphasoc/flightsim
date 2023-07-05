@@ -47,6 +47,10 @@ func NewTelegramBot() *TelegramBot {
 	return &TelegramBot{}
 }
 
+func printMsg(msg string) {
+	fmt.Printf("%s [telegram-bot] %s\n", time.Now().Format("15:04:05"), msg)
+}
+
 // SendRequest sends a request to the Telegram Bot API,
 // takes as an argument a bot method name and returns
 // response status code.
@@ -76,10 +80,8 @@ func (tb *TelegramBot) GetMyCommands() (int, error) {
 func (tb *TelegramBot) Simulate(ctx context.Context, host string) error {
 	token := os.Getenv(FlightsimTelegramToken)
 
-	if "" == token {
-		fmt.Print("WARNING: No token in environment variable FLIGHTSIM_TELEGRAM_TOKEN was found. Using random string instead. ")
-		fmt.Print("This will generate traffic to api.telegram.org but return an authentication error. ")
-		fmt.Println("However, the traffic should still be captured by your SIEM.")
+	if token == "" {
+		printMsg("WARNING: No token in environment variable FLIGHTSIM_TELEGRAM_TOKEN was found. Using random string instead. This will generate traffic to api.telegram.org but return an authentication error. However, the traffic should still be captured by your SIEM.")
 		token = generateRandomTelegramBotToken()
 	}
 
