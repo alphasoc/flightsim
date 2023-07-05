@@ -44,16 +44,7 @@ type TelegramBot struct {
 
 // NewTelegramBot creates new TelegramBot simulator
 func NewTelegramBot() *TelegramBot {
-	token := os.Getenv(FlightsimTelegramToken)
-
-	if "" == token {
-		fmt.Print("WARNING: No token in environment variable FLIGHTSIM_TELEGRAM_TOKEN was found. Using random string instead. ")
-		fmt.Print("This will generate traffic to api.telegram.org but return an authentication error. ")
-		fmt.Println("However, the traffic should still be captured by your SIEM.")
-		token = generateRandomTelegramBotToken()
-	}
-
-	return &TelegramBot{Url: URL + token + "/"}
+	return &TelegramBot{}
 }
 
 // SendRequest sends a request to the Telegram Bot API,
@@ -83,12 +74,22 @@ func (tb *TelegramBot) GetMyCommands() (int, error) {
 
 // Simulate Telegram bot traffic
 func (tb *TelegramBot) Simulate(ctx context.Context, host string) error {
+	token := os.Getenv(FlightsimTelegramToken)
+
+	if "" == token {
+		fmt.Print("WARNING: No token in environment variable FLIGHTSIM_TELEGRAM_TOKEN was found. Using random string instead. ")
+		fmt.Print("This will generate traffic to api.telegram.org but return an authentication error. ")
+		fmt.Println("However, the traffic should still be captured by your SIEM.")
+		token = generateRandomTelegramBotToken()
+	}
+
+	tb.Url = URL + token + "/"
+
 	code, err := tb.GetMe()
 
-	// The following code block checks if err is nil.
-	// If err is not nil and the HTTP response code is different from 200,
-	// the function will return err without explicitly returning an error,
-	// since err is already nil.
+	// If err is nil but return code is different than 200,
+	// we return anyway -- there's no point in executing other commands
+	// on server errors (most likely unauthorized due to random telegram token)
 	if err != nil || code != 200 {
 		return err
 	}
