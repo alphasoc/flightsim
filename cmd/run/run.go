@@ -313,6 +313,35 @@ var allModules = []Module{
 		Timeout:    5 * time.Minute,
 		Fast:       true,
 	},
+	Module{
+		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("irc", wisdom.HostTypeDNS), simulator.NewIRCClient()),
+		Name:       "irc",
+		Pipeline:   PipelineDNS,
+		NumOfHosts: 5,
+		HeaderMsg:  "Preparing a random sample of IRC server domains",
+		Timeout:    5 * time.Second,
+		Fast:       true,
+		HostMsg:    "Simulating IRC traffic to %s",
+	},
+	Module{
+		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("irc", wisdom.HostTypeIP), simulator.NewIRCClient()),
+		Name:       "irc",
+		Pipeline:   PipelineIP,
+		NumOfHosts: 5,
+		HeaderMsg:  "Preparing a random sample of IRC server IP:port pairs",
+		Timeout:    5 * time.Second,
+		Fast:       true,
+		HostMsg:    "Simulating IRC traffic to %s",
+	},
+	Module{
+		Module:     simulator.NewTelegramBot(),
+		Name:       "telegram-bot",
+		Pipeline:   PipelineDNS,
+		NumOfHosts: 1,
+		HeaderMsg:  "Preparing to simulate Telegram bot traffic",
+		Timeout:    3 * time.Second,
+		HostMsg:    "Simulating Telegram bot traffic to %s",
+	},
 }
 
 type Simulation struct {
