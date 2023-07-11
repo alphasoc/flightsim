@@ -340,7 +340,7 @@ var allModules = []Module{
 		NumOfHosts: 1,
 		HeaderMsg:  "Preparing to simulate Telegram bot traffic",
 		Timeout:    3 * time.Second,
-		HostMsg:    "Simulating Telegram bot traffic to %s",
+		HostMsg:    "Simulating Telegram Bot API traffic to %s",
 	},
 }
 

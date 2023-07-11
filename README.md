@@ -152,5 +152,5 @@ The modules packaged with the utility are listed in the table below.
 | `ssh-transfer`| Simulates an SSH file transfer to a service running on an SSH port               |
 | `tunnel-dns`  | Generates DNS tunneling requests to \*.sandbox.alphasoc.xyz                      |
 | `tunnel-icmp` | Generates ICMP tunneling traffic to an Internet service operated by AlphaSOC     |
-| `irc`         | Simulates IRC traffic to a random list of known IRC servers                      |
-| `telegram-bot`| Simulates Telegram bot traffic to api.telegram.org                               |
+| `irc`         | Connects to a random list of public IRC servers                                  |
+| `telegram-bot`| Generates Telegram Bot API traffic using a random or provided token              |
