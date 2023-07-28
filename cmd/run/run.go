@@ -345,8 +345,8 @@ var allModules = []Module{
 	Module{
 		Module:     simulator.NewCleartextProtocolSimulator(),
 		Name:       "cleartext",
-		Pipeline:   PipelineDNS,
-		NumOfHosts: 1,
+		Pipeline:   PipelineIP,
+		NumOfHosts: 5,
 		HeaderMsg:  "Preparing to simulate cleartext protocol traffic",
 		Timeout:    3 * time.Second,
 		HostMsg:    "Sending random data to %s",

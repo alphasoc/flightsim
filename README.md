@@ -141,8 +141,10 @@ The modules packaged with the utility are listed in the table below.
 | Module        | Description                                                                      |
 | ------------- | -------------------------------------------------------------------------------- |
 | `c2`          | Generates both DNS and IP traffic to a random list of known C2 destinations      |
+| `cleartext`   | Generates random cleartext traffic to an Internet service operated by AlphaSOC   |
 | `dga`         | Simulates DGA traffic using random labels and top-level domains                  |
 | `imposter`    | Generates DNS traffic to a list of imposter domains                              |
+| `irc`         | Simulates IRC traffic to a random list of known IRC servers                      |
 | `miner`       | Generates Stratum mining protocol traffic to known cryptomining pools            |
 | `oast`        | Simulates out-of-band application security testing (OAST) traffic                |
 | `scan`        | Performs a port scan of random RFC 5737 addresses using common TCP ports         |
@@ -150,7 +152,6 @@ The modules packaged with the utility are listed in the table below.
 | `spambot`     | Resolves and connects to random Internet SMTP servers to simulate a spam bot     |
 | `ssh-exfil`   | Simulates an SSH file transfer to a service running on a non-standard SSH port   |
 | `ssh-transfer`| Simulates an SSH file transfer to a service running on an SSH port               |
+| `telegram-bot`| Simulates Telegram bot traffic to api.telegram.org                               |
 | `tunnel-dns`  | Generates DNS tunneling requests to \*.sandbox.alphasoc.xyz                      |
 | `tunnel-icmp` | Generates ICMP tunneling traffic to an Internet service operated by AlphaSOC     |
-| `irc`         | Simulates IRC traffic to a random list of known IRC servers                      |
-| `telegram-bot`| Simulates Telegram bot traffic to api.telegram.org                               |
