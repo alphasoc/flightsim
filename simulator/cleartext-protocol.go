@@ -19,35 +19,23 @@ func generateRandomData(n int) []byte {
 
 // CleartextProtocolSimulator simulates cleartext protocol traffic
 type CleartextProtocolSimulator struct {
-	bind           BindAddr
-	TargetHostName string
-	TargetIP       string
-	Data           []byte
+	bind BindAddr
+	data []byte
 }
 
 // NewCleartextProtocolSimulator creates new instance of CleartextProtocolSimulator
 func NewCleartextProtocolSimulator() *CleartextProtocolSimulator {
-	const TargetHostName = "cleartext.sandbox-services.alphasoc.xyz"
-	return &CleartextProtocolSimulator{TargetHostName: TargetHostName}
+	return &CleartextProtocolSimulator{}
 }
 
 func (cps *CleartextProtocolSimulator) Init(bind BindAddr) error {
 	cps.bind = bind
 
-	ips, err := net.LookupIP(cps.TargetHostName)
-
-	if err != nil {
-		return err
-	}
-
-	// take the first IP address returned by LookupIP
-	cps.TargetIP = ips[0].String()
-
 	// random bytes are generated in Init because it's not necessary
 	// to generate them everytime Simulate method is run
 	data := generateRandomData(1000)
 
-	cps.Data = data
+	cps.data = data
 
 	return nil
 }
@@ -66,7 +54,7 @@ func (cps *CleartextProtocolSimulator) Simulate(ctx context.Context, dst string)
 	}
 	defer conn.Close()
 
-	if _, err = conn.Write(cps.Data); err != nil {
+	if _, err = conn.Write(cps.data); err != nil {
 		return err
 	}
 
@@ -83,8 +71,17 @@ func (cps *CleartextProtocolSimulator) Hosts(scope string, size int) ([]string, 
 
 	ports := []string{"21", "23", "110", "143", "873"}
 
-	for _, port := range ports {
-		hosts = append(hosts, net.JoinHostPort(cps.TargetIP, port))
+	ips, err := net.LookupIP("cleartext.sandbox-services.alphasoc.xyz")
+
+	if err != nil {
+		return nil, err
+	}
+
+	// take the first IP address returned by LookupIP
+	targetIP := ips[0].String()
+
+	for i := 0; i < len(ports) && i < size; i++ {
+		hosts = append(hosts, net.JoinHostPort(targetIP, ports[i]))
 	}
 
 	return hosts, nil
