@@ -77,7 +77,7 @@ func (cps *CleartextProtocolSimulator) Simulate(ctx context.Context, dst string)
 	return nil
 }
 
-// Hosts returns a domain name of AlphaSOC sandbox
+// Hosts returns IP:port pairs used to connect to AlphaSOC sandbox
 func (cps *CleartextProtocolSimulator) Hosts(scope string, size int) ([]string, error) {
 	var hosts []string
 
