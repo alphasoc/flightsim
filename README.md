@@ -141,6 +141,7 @@ The modules packaged with the utility are listed in the table below.
 | Module        | Description                                                                      |
 | ------------- | -------------------------------------------------------------------------------- |
 | `c2`          | Generates both DNS and IP traffic to a random list of known C2 destinations      |
+| `cleartext`   | Generates random cleartext traffic to an Internet service operated by AlphaSOC   |
 | `dga`         | Simulates DGA traffic using random labels and top-level domains                  |
 | `imposter`    | Generates DNS traffic to a list of imposter domains                              |
 | `irc`         | Connects to a random list of public IRC servers                                  |

@@ -342,6 +342,15 @@ var allModules = []Module{
 		Timeout:    3 * time.Second,
 		HostMsg:    "Simulating Telegram Bot API traffic to %s",
 	},
+	Module{
+		Module:     simulator.NewCleartextProtocolSimulator(),
+		Name:       "cleartext",
+		Pipeline:   PipelineIP,
+		NumOfHosts: 5,
+		HeaderMsg:  "Preparing to simulate cleartext protocol traffic",
+		Timeout:    3 * time.Second,
+		HostMsg:    "Sending random data to %s",
+	},
 }
 
 type Simulation struct {
