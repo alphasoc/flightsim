@@ -80,8 +80,8 @@ func (cps *CleartextProtocolSimulator) Hosts(scope string, size int) ([]string, 
 	// take the first IP address returned by LookupIP
 	targetIP := ips[0].String()
 
-	for i := 0; i < len(ports) && i < size; i++ {
-		hosts = append(hosts, net.JoinHostPort(targetIP, ports[i]))
+	for _, port := range ports {
+		hosts = append(hosts, net.JoinHostPort(targetIP, port))
 	}
 
 	return hosts, nil

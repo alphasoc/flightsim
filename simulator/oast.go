@@ -79,12 +79,5 @@ func (oast *OAST) Simulate(ctx context.Context, host string) error {
 
 // Hosts returns a list of default domains used by Interactsh.
 func (OAST) Hosts(scope string, size int) ([]string, error) {
-	var hosts []string
-	for _, i := range rand.Perm(len(InteractshDefaultDomains)) {
-		hosts = append(hosts, InteractshDefaultDomains[i])
-		if len(hosts) == size {
-			break
-		}
-	}
-	return hosts, nil
+	return InteractshDefaultDomains, nil
 }

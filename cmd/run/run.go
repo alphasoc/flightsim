@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"math/rand"
 	"net"
 	"sort"
 	"strings"
@@ -243,13 +244,11 @@ var allModules = []Module{
 		Timeout:    1 * time.Second,
 	},
 	Module{
-		Module:     simulator.NewTunnel(),
-		Name:       "tunnel-dns",
-		Pipeline:   PipelineDNS,
-		NumOfHosts: 1,
-		// HeaderMsg:  "Preparing DNS tunnel hostnames",
-		HostMsg: "Simulating DNS tunneling via *.%s",
-		Timeout: 10 * time.Second,
+		Module:   simulator.NewTunnel(),
+		Name:     "tunnel-dns",
+		Pipeline: PipelineDNS,
+		HostMsg:  "Simulating DNS tunneling via *.%s",
+		Timeout:  10 * time.Second,
 	},
 	Module{
 		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("cryptomining", wisdom.HostTypeIP), simulator.NewStratumMiner()),
@@ -296,22 +295,20 @@ var allModules = []Module{
 		Timeout:    3 * time.Second,
 	},
 	Module{
-		Module:     simulator.NewSSHTransfer(),
-		Name:       "ssh-transfer",
-		Pipeline:   PipelineIP,
-		NumOfHosts: 1,
-		HeaderMsg:  "Preparing to send randomly generated data to a standard SSH port",
-		Timeout:    5 * time.Minute,
-		Fast:       true,
+		Module:    simulator.NewSSHTransfer(),
+		Name:      "ssh-transfer",
+		Pipeline:  PipelineIP,
+		HeaderMsg: "Preparing to send randomly generated data to a standard SSH port",
+		Timeout:   5 * time.Minute,
+		Fast:      true,
 	},
 	Module{
-		Module:     simulator.NewSSHExfil(),
-		Name:       "ssh-exfil",
-		Pipeline:   PipelineIP,
-		NumOfHosts: 1,
-		HeaderMsg:  "Preparing to send randomly generated data to a non-standard SSH port",
-		Timeout:    5 * time.Minute,
-		Fast:       true,
+		Module:    simulator.NewSSHExfil(),
+		Name:      "ssh-exfil",
+		Pipeline:  PipelineIP,
+		HeaderMsg: "Preparing to send randomly generated data to a non-standard SSH port",
+		Timeout:   5 * time.Minute,
+		Fast:      true,
 	},
 	Module{
 		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("irc", wisdom.HostTypeDNS), simulator.NewIRCClient()),
@@ -334,22 +331,20 @@ var allModules = []Module{
 		HostMsg:    "Simulating IRC traffic to %s",
 	},
 	Module{
-		Module:     simulator.NewTelegramBot(),
-		Name:       "telegram-bot",
-		Pipeline:   PipelineDNS,
-		NumOfHosts: 1,
-		HeaderMsg:  "Preparing to simulate Telegram bot traffic",
-		Timeout:    3 * time.Second,
-		HostMsg:    "Simulating Telegram Bot API traffic to %s",
+		Module:    simulator.NewTelegramBot(),
+		Name:      "telegram-bot",
+		Pipeline:  PipelineDNS,
+		HeaderMsg: "Preparing to simulate Telegram bot traffic",
+		Timeout:   3 * time.Second,
+		HostMsg:   "Simulating Telegram Bot API traffic to %s",
 	},
 	Module{
-		Module:     simulator.NewCleartextProtocolSimulator(),
-		Name:       "cleartext",
-		Pipeline:   PipelineIP,
-		NumOfHosts: 5,
-		HeaderMsg:  "Preparing to simulate cleartext protocol traffic",
-		Timeout:    3 * time.Second,
-		HostMsg:    "Sending random data to %s",
+		Module:    simulator.NewCleartextProtocolSimulator(),
+		Name:      "cleartext",
+		Pipeline:  PipelineIP,
+		HeaderMsg: "Preparing to simulate cleartext protocol traffic",
+		Timeout:   3 * time.Second,
+		HostMsg:   "Sending random data to %s",
 	},
 }
 
@@ -442,6 +437,15 @@ func run(sims []*Simulation, bind simulator.BindAddr, size int) error {
 			if err != nil {
 				printMsg(sim, msgPrefixErrorInit+err.Error())
 				continue
+			}
+
+			// Pick random hosts if we have more than we need
+			if numOfHosts > 0 && len(hosts) > numOfHosts {
+				newHosts := make([]string, numOfHosts)
+				for n, k := range rand.Perm(len(hosts))[:numOfHosts] {
+					newHosts[n] = hosts[k]
+				}
+				hosts = newHosts
 			}
 
 			// Wrap module execution in a function, so we can recover from panics
