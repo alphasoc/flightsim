@@ -192,6 +192,22 @@ var allModules = []Module{
 		Timeout:    1 * time.Second,
 	},
 	Module{
+		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("spearphishing", wisdom.HostTypeDNS), new(simulator.DNSResolveSimulator)),
+		Name:       "spearphishing",
+		Pipeline:   PipelineDNS,
+		NumOfHosts: 5,
+		HeaderMsg:  "Preparing a random sample of spear phishing domains",
+		Timeout:    1 * time.Second,
+	},
+	Module{
+		Module:     simulator.CreateModule(wisdom.NewWisdomHosts("skimmer", wisdom.HostTypeDNS), new(simulator.DNSResolveSimulator)),
+		Name:       "skimmer",
+		Pipeline:   PipelineDNS,
+		NumOfHosts: 5,
+		HeaderMsg:  "Preparing a random sample of web skimming domains",
+		Timeout:    1 * time.Second,
+	},
+	Module{
 		Module:     simulator.NewDGA(),
 		Name:       "dga",
 		Pipeline:   PipelineDNS,
