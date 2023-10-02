@@ -7,7 +7,7 @@
 Download the latest flightsim binary for your OS from the [GitHub Releases](https://github.com/alphasoc/flightsim/releases) page. Alternatively, the utility can be built using [Golang](https://golang.org/doc/install) in any environment (e.g. Linux, MacOS, Windows), as follows:
 
 ```
-go get -u github.com/alphasoc/flightsim/...
+go install github.com/alphasoc/flightsim@latest
 ```
 
 ## Running Network Flight Simulator
