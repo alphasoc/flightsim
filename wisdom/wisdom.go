@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/http"
@@ -145,11 +144,11 @@ func query(reqURL *url.URL) ([]byte, error) {
 	defer resp.Body.Close()
 
 	if c := resp.StatusCode; c != http.StatusOK {
-		b, _ := ioutil.ReadAll(io.LimitReader(resp.Body, 2048))
+		b, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
 		return nil, fmt.Errorf("api.open.wisdom.alphasoc.net said: %d: %s", c, b)
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrapf(err, "api.open.wisdom.alphasoc.net read body error")
 	}
