@@ -22,12 +22,15 @@ jobs:
       -
         name: Build
         run: go build -v ./...
+        working-directory: v2
       -
         name: Test
         run: go test -v ./...
+        working-directory: v2
       -
         name: Vet
         run: go vet -v ./...
+        working-directory: v2
       -
         if: startsWith(github.ref, 'refs/tags/v') == true
         name: Import GPG key
