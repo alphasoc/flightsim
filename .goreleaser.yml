@@ -1,6 +1,7 @@
 builds:
   # You can have multiple builds defined as a yaml list.
   -
+    dir: ./v2
     goos:
       - linux
       - freebsd
@@ -58,6 +59,10 @@ release:
   # You can change the name of the release.
   # Default is `{{.Tag}}` on OSS and `{{.PrefixedTag}}` on Pro.
   name_template: "{{.ProjectName}}-v{{.Version}}"
+
+  extra_files:
+    - glob: LICENSE
+    - glob: README.md
 
 # Sign all artifacts.
 signs:
