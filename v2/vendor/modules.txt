@@ -1,0 +1,45 @@
+# github.com/cretz/bine v0.2.0
+## explicit; go 1.15
+github.com/cretz/bine/control
+github.com/cretz/bine/process
+github.com/cretz/bine/tor
+github.com/cretz/bine/torutil
+github.com/cretz/bine/torutil/ed25519
+github.com/cretz/bine/torutil/ed25519/internal/edwards25519
+# github.com/inhies/go-bytesize v0.0.0-20220417184213-4913239db9cf
+## explicit; go 1.12
+github.com/inhies/go-bytesize
+# github.com/lrstanley/girc v0.0.0-20240317214256-a4a3d96369cb
+## explicit; go 1.18
+github.com/lrstanley/girc
+github.com/lrstanley/girc/internal/ctxgroup
+# github.com/pkg/errors v0.9.1
+## explicit
+github.com/pkg/errors
+# golang.org/x/crypto v0.21.0
+## explicit; go 1.18
+golang.org/x/crypto/blowfish
+golang.org/x/crypto/chacha20
+golang.org/x/crypto/curve25519
+golang.org/x/crypto/curve25519/internal/field
+golang.org/x/crypto/ed25519
+golang.org/x/crypto/internal/alias
+golang.org/x/crypto/internal/poly1305
+golang.org/x/crypto/sha3
+golang.org/x/crypto/ssh
+golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
+# golang.org/x/net v0.23.0
+## explicit; go 1.18
+golang.org/x/net/bpf
+golang.org/x/net/icmp
+golang.org/x/net/internal/iana
+golang.org/x/net/internal/socket
+golang.org/x/net/internal/socks
+golang.org/x/net/ipv4
+golang.org/x/net/ipv6
+golang.org/x/net/proxy
+# golang.org/x/sys v0.18.0
+## explicit; go 1.18
+golang.org/x/sys/cpu
+golang.org/x/sys/unix
+golang.org/x/sys/windows
