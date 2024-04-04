@@ -60,10 +60,6 @@ release:
   # Default is `{{.Tag}}` on OSS and `{{.PrefixedTag}}` on Pro.
   name_template: "{{.ProjectName}}-v{{.Version}}"
 
-  extra_files:
-    - glob: LICENSE
-    - glob: README.md
-
 # Sign all artifacts.
 signs:
   - artifacts: all
